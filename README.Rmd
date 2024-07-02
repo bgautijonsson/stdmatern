@@ -53,13 +53,16 @@ bench::mark(
 
 
 ```{r}
+#| include: false
+#| echo: true
 library(dplyr)
 library(sparseMVN)
 library(ggplot2)
+```
 
-Q <- make_standardized_matern(dim = 20, rho = 0.9, nu = 2)
-
-grid_dim <- 50
+```{r}
+start <- tictoc::tic()
+grid_dim <- 80
 rho <- 0.9
 nu <- 2
 Q <- make_standardized_matern(grid_dim, rho, nu = nu)
@@ -83,4 +86,5 @@ tibble(
     geom_raster() +
     scale_fill_viridis_c() +
     coord_fixed(expand = FALSE)
+stop <- tictoc::toc()
 ```

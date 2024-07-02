@@ -52,30 +52,14 @@ bench::mark(
 #> # A tibble: 1 × 6
 #>   expression                             min median `itr/sec` mem_alloc `gc/sec`
 #>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
-#> 1 make_standardized_matern(dim = 40,… 55.2ms 55.4ms      18.0    98.3KB        0
+#> 1 make_standardized_matern(dim = 40,… 55.3ms 55.6ms      17.9    98.3KB        0
 ```
 
 # Sampling spatial data
 
 ``` r
-library(dplyr)
-#> 
-#> Attaching package: 'dplyr'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     filter, lag
-#> The following objects are masked from 'package:base':
-#> 
-#>     intersect, setdiff, setequal, union
-```
-
-``` r
-library(sparseMVN)
-library(ggplot2)
-
-Q <- make_standardized_matern(dim = 20, rho = 0.9, nu = 2)
-
-grid_dim <- 50
+start <- tictoc::tic()
+grid_dim <- 80
 rho <- 0.9
 nu <- 2
 Q <- make_standardized_matern(grid_dim, rho, nu = nu)
@@ -101,4 +85,9 @@ tibble(
     coord_fixed(expand = FALSE)
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
+
+``` r
+stop <- tictoc::toc()
+#> 3.311 sec elapsed
+```
