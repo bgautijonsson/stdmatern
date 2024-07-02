@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# cholesky
+# stdmatern
 
 This directory is for development of fast and memory-efficient code that
 creates Matérn precision matrices that have been standardized so that
@@ -11,11 +11,11 @@ made available inside R with the `{Rcpp}` packages.
 The package can be installed with
 
 ``` r
-pak::pak("bgautijonsson/cholesky")
+pak::pak("bgautijonsson/stdmatern")
 ```
 
 ``` r
-library(cholesky)
+library(stdmatern)
 #> Loading required package: Matrix
 ```
 
@@ -52,5 +52,5 @@ bench::mark(
 #> # A tibble: 1 × 6
 #>   expression                             min median `itr/sec` mem_alloc `gc/sec`
 #>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
-#> 1 make_standardized_matern(dim = 40,… 55.5ms 58.3ms      15.9    98.3KB        0
+#> 1 make_standardized_matern(dim = 40,… 55.3ms 55.4ms      18.0    98.3KB        0
 ```
