@@ -5,15 +5,15 @@ make_AR_prec_matrix <- function(dim, rho) {
     .Call(`_stdmatern_make_AR_prec_matrix`, dim, rho)
 }
 
-make_matern_prec_matrix <- function(dim, rho) {
-    .Call(`_stdmatern_make_matern_prec_matrix`, dim, rho)
+make_matern_prec_matrix <- function(dim, rho, nu) {
+    .Call(`_stdmatern_make_matern_prec_matrix`, dim, rho, nu)
 }
 
 compute_marginal_variances <- function(Q) {
     .Call(`_stdmatern_compute_marginal_variances`, Q)
 }
 
-make_standardized_matern <- function(dim, rho) {
-    .Call(`_stdmatern_make_standardized_matern`, dim, rho)
+make_standardized_matern <- function(dim, rho, nu) {
+    .Call(`_stdmatern_make_standardized_matern`, dim, rho, nu)
 }
 

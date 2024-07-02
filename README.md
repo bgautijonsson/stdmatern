@@ -20,7 +20,7 @@ library(stdmatern)
 ```
 
 ``` r
-Q <- make_standardized_matern(dim = 2, rho = 0.5)
+Q <- make_standardized_matern(dim = 2, rho = 0.5, nu = 0)
 ```
 
 ``` r
@@ -47,10 +47,58 @@ Creating and standardizing a 1600x1600 precision matrix
 
 ``` r
 bench::mark(
-  make_standardized_matern(dim = 40, rho = 0.5)
+  make_standardized_matern(dim = 40, rho = 0.5, nu = 0)
 )
 #> # A tibble: 1 × 6
 #>   expression                             min median `itr/sec` mem_alloc `gc/sec`
 #>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
-#> 1 make_standardized_matern(dim = 40,… 55.3ms 55.4ms      18.0    98.3KB        0
+#> 1 make_standardized_matern(dim = 40,… 55.2ms 55.4ms      18.0    98.3KB        0
 ```
+
+# Sampling spatial data
+
+``` r
+library(dplyr)
+#> 
+#> Attaching package: 'dplyr'
+#> The following objects are masked from 'package:stats':
+#> 
+#>     filter, lag
+#> The following objects are masked from 'package:base':
+#> 
+#>     intersect, setdiff, setequal, union
+```
+
+``` r
+library(sparseMVN)
+library(ggplot2)
+
+Q <- make_standardized_matern(dim = 20, rho = 0.9, nu = 2)
+
+grid_dim <- 50
+rho <- 0.9
+nu <- 2
+Q <- make_standardized_matern(grid_dim, rho, nu = nu)
+
+
+Z <- rmvn.sparse(
+    n = 1,
+    mu = rep(0, nrow(Q)),
+    CH = Matrix::Cholesky(Q)
+)
+
+tibble(
+  Z = as.numeric(Z)
+) |> 
+  mutate(
+    id = row_number(),
+      lat = (id - 1) %% grid_dim,
+      lon = cumsum(lat == 0),
+    ) |> 
+    ggplot(aes(lat, lon, fill = Z)) +
+    geom_raster() +
+    scale_fill_viridis_c() +
+    coord_fixed(expand = FALSE)
+```
+
+<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />

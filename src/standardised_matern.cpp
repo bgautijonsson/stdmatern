@@ -26,7 +26,7 @@ Eigen::SparseMatrix<double> make_AR_prec_matrix(int dim, double rho) {
 
 // Function to create the 2-dimensional Matérn precision matrix using Kronecker products
 // [[Rcpp::export]]
-Eigen::SparseMatrix<double> make_matern_prec_matrix(int dim, double rho) {
+Eigen::SparseMatrix<double> make_matern_prec_matrix(int dim, double rho, int nu) {
     Eigen::SparseMatrix<double> Q = make_AR_prec_matrix(dim, rho);
     Eigen::SparseMatrix<double> I = Eigen::SparseMatrix<double>(dim, dim);
     I.setIdentity();
@@ -38,6 +38,16 @@ Eigen::SparseMatrix<double> make_matern_prec_matrix(int dim, double rho) {
     // Sum the Kronecker products
     Eigen::SparseMatrix<double> result = QI + IQ;
     result.makeCompressed();
+
+    // Apply matrix multiplication nu times
+    if (nu > 1) {
+        Eigen::SparseMatrix<double> temp = result;
+        for (int i = 1; i < nu; ++i) {
+            temp = temp * result;
+            temp.makeCompressed();
+        }
+        result = temp;
+    }
 
     return result;
 }
@@ -62,9 +72,9 @@ Eigen::SparseMatrix<double> compute_marginal_variances(const Eigen::SparseMatrix
 
 // Function to create the standardized Matérn precision matrix
 // [[Rcpp::export]]
-Eigen::SparseMatrix<double> make_standardized_matern(int dim, double rho) {
+Eigen::SparseMatrix<double> make_standardized_matern(int dim, double rho, int nu) {
     // Create the Matérn precision matrix
-    Eigen::SparseMatrix<double> Q = make_matern_prec_matrix(dim, rho);
+    Eigen::SparseMatrix<double> Q = make_matern_prec_matrix(dim, rho, nu);
 
     // Compute marginal variances
     Eigen::SparseMatrix<double> D = compute_marginal_variances(Q);

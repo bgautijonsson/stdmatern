@@ -24,14 +24,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // make_matern_prec_matrix
-Eigen::SparseMatrix<double> make_matern_prec_matrix(int dim, double rho);
-RcppExport SEXP _stdmatern_make_matern_prec_matrix(SEXP dimSEXP, SEXP rhoSEXP) {
+Eigen::SparseMatrix<double> make_matern_prec_matrix(int dim, double rho, int nu);
+RcppExport SEXP _stdmatern_make_matern_prec_matrix(SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
     Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
-    rcpp_result_gen = Rcpp::wrap(make_matern_prec_matrix(dim, rho));
+    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(make_matern_prec_matrix(dim, rho, nu));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -47,23 +48,24 @@ BEGIN_RCPP
 END_RCPP
 }
 // make_standardized_matern
-Eigen::SparseMatrix<double> make_standardized_matern(int dim, double rho);
-RcppExport SEXP _stdmatern_make_standardized_matern(SEXP dimSEXP, SEXP rhoSEXP) {
+Eigen::SparseMatrix<double> make_standardized_matern(int dim, double rho, int nu);
+RcppExport SEXP _stdmatern_make_standardized_matern(SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
     Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
-    rcpp_result_gen = Rcpp::wrap(make_standardized_matern(dim, rho));
+    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(make_standardized_matern(dim, rho, nu));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_stdmatern_make_AR_prec_matrix", (DL_FUNC) &_stdmatern_make_AR_prec_matrix, 2},
-    {"_stdmatern_make_matern_prec_matrix", (DL_FUNC) &_stdmatern_make_matern_prec_matrix, 2},
+    {"_stdmatern_make_matern_prec_matrix", (DL_FUNC) &_stdmatern_make_matern_prec_matrix, 3},
     {"_stdmatern_compute_marginal_variances", (DL_FUNC) &_stdmatern_compute_marginal_variances, 1},
-    {"_stdmatern_make_standardized_matern", (DL_FUNC) &_stdmatern_make_standardized_matern, 2},
+    {"_stdmatern_make_standardized_matern", (DL_FUNC) &_stdmatern_make_standardized_matern, 3},
     {NULL, NULL, 0}
 };
 
