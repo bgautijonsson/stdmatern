@@ -1,0 +1,50 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+
+# stdmatern
+
+This directory is for development of fast and memory-efficient code that creates Matérn precision matrices that have been standardized so that their inverse is a correlation matrix. The code is written in C++ and made available inside R with the `{Rcpp}` packages.
+
+The package can be installed with 
+
+```{r}
+#| eval: false
+pak::pak("bgautijonsson/stdmatern")
+```
+
+
+
+```{r}
+library(stdmatern)
+Q <- make_standardized_matern(dim = 2, rho = 0.5)
+```
+
+```{r}
+Q
+```
+
+```{r}
+Q |> solve()
+```
+
+Creating and standardizing a 1600x1600 precision matrix
+
+```{r}
+bench::mark(
+  make_standardized_matern(dim = 40, rho = 0.5)
+)
+```
+

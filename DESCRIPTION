@@ -1,0 +1,15 @@
+Package: stdmatern
+Type: Package
+Title: What the Package Does in One 'Title Case' Line
+Version: 1.0
+Date: 2024-07-02
+Author: Brynjólfur Gauti Guðrúnar Jónsson
+Maintainer: Brynjólfur Gauti Guðrúnar Jónsson <brynjolfur@hi.is>
+Description: This package was developed to quickly and easily create certain types of precision matrices for Gaussian Markov Random Fields where the inverse of precision matrices is a correlation matrix.
+License: GPL (>= 2)
+Imports: Rcpp, RcppEigen
+Depends: Matrix
+LinkingTo: 
+    Rcpp,
+    RcppEigen
+RoxygenNote: 7.3.1
