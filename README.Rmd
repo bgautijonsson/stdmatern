@@ -88,3 +88,19 @@ tibble(
     coord_fixed(expand = FALSE)
 stop <- tictoc::toc()
 ```
+
+
+# Normal density
+
+The package also implements a method for calculating the log-density of a multivariate normal by creating and scaling an appropriate precision matrix. This function is meant for use inside MCMC samplers or optimization algorithms. If you plan to use the same precision matrix often, it's better to create and store the precision matrix instead of calculating it again.
+
+```{r}
+grid_dim <- 50
+rho <- 0.5
+nu <- 0
+x <- rnorm(grid_dim^2)
+bench::mark(
+  matern_mvn_density(x, grid_dim, rho, nu)
+)
+```
+

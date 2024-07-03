@@ -17,3 +17,15 @@ make_standardized_matern <- function(dim, rho, nu) {
     .Call(`_stdmatern_make_standardized_matern`, dim, rho, nu)
 }
 
+make_standardized_matern_cholesky <- function(dim, rho, nu) {
+    .Call(`_stdmatern_make_standardized_matern_cholesky`, dim, rho, nu)
+}
+
+dmvn_chol <- function(x, L) {
+    .Call(`_stdmatern_dmvn_chol`, x, L)
+}
+
+matern_mvn_density <- function(x, dim, rho, nu) {
+    .Call(`_stdmatern_matern_mvn_density`, x, dim, rho, nu)
+}
+

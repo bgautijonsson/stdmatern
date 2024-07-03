@@ -52,7 +52,7 @@ bench::mark(
 #> # A tibble: 1 × 6
 #>   expression                             min median `itr/sec` mem_alloc `gc/sec`
 #>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
-#> 1 make_standardized_matern(dim = 40,… 55.3ms 55.6ms      17.9    98.3KB        0
+#> 1 make_standardized_matern(dim = 40,… 55.5ms 56.4ms      17.3    98.3KB        0
 ```
 
 # Sampling spatial data
@@ -89,5 +89,28 @@ tibble(
 
 ``` r
 stop <- tictoc::toc()
-#> 3.311 sec elapsed
+#> 3.413 sec elapsed
+```
+
+# Normal density
+
+The package also implements a method for calculating the log-density of
+a multivariate normal by creating and scaling an appropriate precision
+matrix. This function is meant for use inside MCMC samplers or
+optimization algorithms. If you plan to use the same precision matrix
+often, it’s better to create and store the precision matrix instead of
+calculating it again.
+
+``` r
+grid_dim <- 50
+rho <- 0.5
+nu <- 0
+x <- rnorm(grid_dim^2)
+bench::mark(
+  matern_mvn_density(x, grid_dim, rho, nu)
+)
+#> # A tibble: 1 × 6
+#>   expression                             min median `itr/sec` mem_alloc `gc/sec`
+#>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
+#> 1 matern_mvn_density(x, grid_dim, rh… 75.3ms 94.1ms      10.3    4.31KB        0
 ```

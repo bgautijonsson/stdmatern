@@ -1,5 +1,7 @@
 #include <RcppEigen.h>
+#include <omp.h>
 // [[Rcpp::depends(RcppEigen)]]
+// [[Rcpp::plugins(openmp)]]
 
 using namespace Rcpp;
 using namespace Eigen;
@@ -82,4 +84,59 @@ Eigen::SparseMatrix<double> make_standardized_matern(int dim, double rho, int nu
     Eigen::SparseMatrix<double> Q_standardized = D * Q * D;
 
     return Q_standardized;
+}
+
+
+// Function to create the Cholesky factor of the standardized Matérn precision matrix
+// [[Rcpp::export]]
+Eigen::SparseMatrix<double> make_standardized_matern_cholesky(int dim, double rho, int nu) {
+    Eigen::SparseMatrix<double> Q = make_matern_prec_matrix(dim, rho, nu);
+    Eigen::SimplicialLLT<Eigen::SparseMatrix<double>, Eigen::Lower, Eigen::NaturalOrdering<int>> llt(Q);
+    Eigen::SparseMatrix<double> L = llt.matrixU();
+    Eigen::VectorXd marginal_std(Q.rows());
+    
+
+    // Compute marginal standard deviations
+    #pragma omp parallel for
+    for (int i = 0; i < Q.rows(); ++i) {
+        Eigen::VectorXd ei = Eigen::VectorXd::Unit(Q.rows(), i);
+        marginal_std(i) = std::sqrt(llt.solve(ei)(i));
+    }
+    
+    // Standardize L
+    #pragma omp parallel for
+    for (int k = 0; k < Q.rows(); ++k) {
+        for (Eigen::SparseMatrix<double>::InnerIterator it(L, k); it; ++it) {
+            it.valueRef() *= marginal_std(it.row());
+        }
+    }
+    
+    // Convert to lower triangular sparse matrix
+    return L;
+}
+
+// [[Rcpp::export]]
+double dmvn_chol(const Eigen::VectorXd& x, const Eigen::SparseMatrix<double>& L) {
+    
+    int n = x.size();
+    double C = -0.918938533204672669541 * n;
+    
+    Eigen::VectorXd q = L * x;
+    
+    // Compute log-density
+    double quadform = q.squaredNorm();
+    double log_det = L.diagonal().array().log().sum();
+    
+    return C + log_det - quadform/2;
+}
+
+
+// [[Rcpp::export]]
+double matern_mvn_density(const Eigen::VectorXd& x, int dim, double rho, int nu) {
+    
+    // Create the standardized Matérn Cholesky matrix
+    Eigen::SparseMatrix<double> L = make_standardized_matern_cholesky(dim, rho, nu);
+    
+    // Calculate and return the density
+    return dmvn_chol(x, L);
 }
