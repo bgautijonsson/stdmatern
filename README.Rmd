@@ -104,3 +104,24 @@ bench::mark(
 )
 ```
 
+The function can also take in a matrix, with ncol = n_replicates and nrow = grim_dim^2
+
+```{r}
+grid_dim <- 50
+n_replicates <- 10
+rho <- 0.5
+nu <- 0
+Q <- make_standardized_matern(grid_dim, rho, nu = nu)
+L <- make_standardized_matern_cholesky(grid_dim, rho, nu = nu)
+X <- rmvn.sparse(
+    n = n_replicates,
+    mu = rep(0, nrow(Q)),
+    CH = Matrix::Cholesky(Q)
+) |> t()
+
+X |> dim()
+
+bench::mark(
+  matern_mvn_density(X, grid_dim, rho, nu)
+)
+```

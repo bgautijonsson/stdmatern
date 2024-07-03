@@ -73,29 +73,29 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// dmvn_chol
-double dmvn_chol(const Eigen::VectorXd& x, const Eigen::SparseMatrix<double>& L);
-RcppExport SEXP _stdmatern_dmvn_chol(SEXP xSEXP, SEXP LSEXP) {
+// dmvn_chol_cpp
+Eigen::VectorXd dmvn_chol_cpp(const Eigen::MatrixXd& X, const Eigen::SparseMatrix<double>& L);
+RcppExport SEXP _stdmatern_dmvn_chol_cpp(SEXP XSEXP, SEXP LSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::SparseMatrix<double>& >::type L(LSEXP);
-    rcpp_result_gen = Rcpp::wrap(dmvn_chol(x, L));
+    rcpp_result_gen = Rcpp::wrap(dmvn_chol_cpp(X, L));
     return rcpp_result_gen;
 END_RCPP
 }
-// matern_mvn_density
-double matern_mvn_density(const Eigen::VectorXd& x, int dim, double rho, int nu);
-RcppExport SEXP _stdmatern_matern_mvn_density(SEXP xSEXP, SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
+// matern_mvn_density_cpp
+Eigen::VectorXd matern_mvn_density_cpp(const Eigen::MatrixXd& X, int dim, double rho, int nu);
+RcppExport SEXP _stdmatern_matern_mvn_density_cpp(SEXP XSEXP, SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
     Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
     Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
-    rcpp_result_gen = Rcpp::wrap(matern_mvn_density(x, dim, rho, nu));
+    rcpp_result_gen = Rcpp::wrap(matern_mvn_density_cpp(X, dim, rho, nu));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -106,8 +106,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_stdmatern_compute_marginal_variances", (DL_FUNC) &_stdmatern_compute_marginal_variances, 1},
     {"_stdmatern_make_standardized_matern", (DL_FUNC) &_stdmatern_make_standardized_matern, 3},
     {"_stdmatern_make_standardized_matern_cholesky", (DL_FUNC) &_stdmatern_make_standardized_matern_cholesky, 3},
-    {"_stdmatern_dmvn_chol", (DL_FUNC) &_stdmatern_dmvn_chol, 2},
-    {"_stdmatern_matern_mvn_density", (DL_FUNC) &_stdmatern_matern_mvn_density, 4},
+    {"_stdmatern_dmvn_chol_cpp", (DL_FUNC) &_stdmatern_dmvn_chol_cpp, 2},
+    {"_stdmatern_matern_mvn_density_cpp", (DL_FUNC) &_stdmatern_matern_mvn_density_cpp, 4},
     {NULL, NULL, 0}
 };
 

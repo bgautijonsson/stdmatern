@@ -116,27 +116,31 @@ Eigen::SparseMatrix<double> make_standardized_matern_cholesky(int dim, double rh
 }
 
 // [[Rcpp::export]]
-double dmvn_chol(const Eigen::VectorXd& x, const Eigen::SparseMatrix<double>& L) {
-    
-    int n = x.size();
+Eigen::VectorXd dmvn_chol_cpp(const Eigen::MatrixXd& X, const Eigen::SparseMatrix<double>& L) {
+    int n_obs = X.cols();
+    int n = X.rows();
     double C = -0.918938533204672669541 * n;
-    
-    Eigen::VectorXd q = L * x;
-    
-    // Compute log-density
-    double quadform = q.squaredNorm();
     double log_det = L.diagonal().array().log().sum();
     
-    return C + log_det - quadform/2;
+    Eigen::VectorXd log_densities(n_obs);
+    
+    #pragma omp parallel for
+    for (int i = 0; i < n_obs; ++i) {
+        Eigen::VectorXd q = L * X.col(i);
+        double quadform = q.squaredNorm();
+        log_densities(i) = C + log_det - quadform/2;
+    }
+    
+    return log_densities;
 }
 
 
 // [[Rcpp::export]]
-double matern_mvn_density(const Eigen::VectorXd& x, int dim, double rho, int nu) {
+Eigen::VectorXd matern_mvn_density_cpp(const Eigen::MatrixXd& X, int dim, double rho, int nu) {
     
     // Create the standardized Matérn Cholesky matrix
     Eigen::SparseMatrix<double> L = make_standardized_matern_cholesky(dim, rho, nu);
     
-    // Calculate and return the density
-    return dmvn_chol(x, L);
+    // Calculate and return the densities
+    return dmvn_chol_cpp(X, L);
 }

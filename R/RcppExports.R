@@ -21,11 +21,11 @@ make_standardized_matern_cholesky <- function(dim, rho, nu) {
     .Call(`_stdmatern_make_standardized_matern_cholesky`, dim, rho, nu)
 }
 
-dmvn_chol <- function(x, L) {
-    .Call(`_stdmatern_dmvn_chol`, x, L)
+dmvn_chol_cpp <- function(X, L) {
+    .Call(`_stdmatern_dmvn_chol_cpp`, X, L)
 }
 
-matern_mvn_density <- function(x, dim, rho, nu) {
-    .Call(`_stdmatern_matern_mvn_density`, x, dim, rho, nu)
+matern_mvn_density_cpp <- function(X, dim, rho, nu) {
+    .Call(`_stdmatern_matern_mvn_density_cpp`, X, dim, rho, nu)
 }
 

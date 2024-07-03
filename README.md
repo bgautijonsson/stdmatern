@@ -51,8 +51,8 @@ bench::mark(
 )
 #> # A tibble: 1 × 6
 #>   expression                             min median `itr/sec` mem_alloc `gc/sec`
-#>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
-#> 1 make_standardized_matern(dim = 40,… 55.5ms 56.4ms      17.3    98.3KB        0
+#>   <bch:expr>                           <bch> <bch:>     <dbl> <bch:byt>    <dbl>
+#> 1 make_standardized_matern(dim = 40, …  55ms 55.1ms      18.1    98.3KB        0
 ```
 
 # Sampling spatial data
@@ -89,7 +89,7 @@ tibble(
 
 ``` r
 stop <- tictoc::toc()
-#> 3.413 sec elapsed
+#> 3.378 sec elapsed
 ```
 
 # Normal density
@@ -112,5 +112,36 @@ bench::mark(
 #> # A tibble: 1 × 6
 #>   expression                             min median `itr/sec` mem_alloc `gc/sec`
 #>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
-#> 1 matern_mvn_density(x, grid_dim, rh… 75.3ms 94.1ms      10.3    4.31KB        0
+#> 1 matern_mvn_density(x, grid_dim, rh… 69.1ms 71.7ms      13.9    40.6KB        0
+```
+
+The function can also take in a matrix, with ncol = n_replicates and
+nrow = grim_dim^2
+
+``` r
+grid_dim <- 50
+n_replicates <- 10
+rho <- 0.5
+nu <- 0
+Q <- make_standardized_matern(grid_dim, rho, nu = nu)
+L <- make_standardized_matern_cholesky(grid_dim, rho, nu = nu)
+X <- rmvn.sparse(
+    n = n_replicates,
+    mu = rep(0, nrow(Q)),
+    CH = Matrix::Cholesky(Q)
+) |> t()
+
+X |> dim()
+#> [1] 2500   10
+```
+
+``` r
+
+bench::mark(
+  matern_mvn_density(X, grid_dim, rho, nu)
+)
+#> # A tibble: 1 × 6
+#>   expression                             min median `itr/sec` mem_alloc `gc/sec`
+#>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
+#> 1 matern_mvn_density(X, grid_dim, rh… 69.3ms 78.6ms      12.5        0B        0
 ```
