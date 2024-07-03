@@ -29,3 +29,15 @@ matern_mvn_density_cpp <- function(X, dim, rho, nu) {
     .Call(`_stdmatern_matern_mvn_density_cpp`, X, dim, rho, nu)
 }
 
+fast_marginal_variances <- function(Q1) {
+    .Call(`_stdmatern_fast_marginal_variances`, Q1)
+}
+
+log_density_eigen <- function(x, eigenvalue, eigenvector) {
+    .Call(`_stdmatern_log_density_eigen`, x, eigenvalue, eigenvector)
+}
+
+matern_mvn_density_eigen <- function(X, dim, rho, nu) {
+    .Call(`_stdmatern_matern_mvn_density_eigen`, X, dim, rho, nu)
+}
+

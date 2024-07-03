@@ -144,3 +144,76 @@ Eigen::VectorXd matern_mvn_density_cpp(const Eigen::MatrixXd& X, int dim, double
     // Calculate and return the densities
     return dmvn_chol_cpp(X, L);
 }
+
+// [[Rcpp::export]]
+Eigen::VectorXd fast_marginal_variances(const Eigen::SparseMatrix<double>& Q1) {
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(Q1);
+    Eigen::VectorXd A1 = eig.eigenvalues();
+    Eigen::MatrixXd V1 = eig.eigenvectors();
+
+    int dim = Q1.cols();
+    
+    Eigen::VectorXd msd = Eigen::VectorXd::Zero(dim * dim);
+    
+    for (int i = 0; i < dim; ++i) {
+        for (int j = 0; j < dim; ++j) {
+            Eigen::VectorXd V_temp = Eigen::kroneckerProduct(V1.col(j), V1.col(i));
+            double A_temp = A1(i) + A1(j);
+            msd += (V_temp.array().square() / A_temp).matrix();
+        }
+    }
+    
+    msd = msd.array().sqrt();
+    
+    return msd;
+}
+
+// Simplified function to compute log-density using eigendecomposition (μ = 0)
+// [[Rcpp::export]]
+double log_density_eigen(const Eigen::VectorXd& x,
+                         double eigenvalue, const Eigen::VectorXd& eigenvector) {
+    int n = x.size();
+    double transformed = eigenvector.dot(x);
+    double quadform = transformed * transformed * eigenvalue;
+    double logdet = std::log(eigenvalue);
+    
+    return -0.5 * (n * std::log(2 * M_PI) + logdet + quadform);
+}
+
+
+// [[Rcpp::export]]
+Eigen::VectorXd matern_mvn_density_eigen(const Eigen::MatrixXd& X, int dim, double rho, int nu) {
+    Eigen::SparseMatrix<double> Q1 = make_AR_prec_matrix(dim, rho);
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(Q1);
+    Eigen::VectorXd A1 = eig.eigenvalues();
+    Eigen::MatrixXd V1 = eig.eigenvectors();
+    
+    int n_obs = X.cols();
+    Eigen::VectorXd log_densities(n_obs);
+    
+    // Compute marginal standard deviations
+    Eigen::VectorXd marginal_sds = fast_marginal_variances(Q1);
+    
+    double log_det_sum = A1.array().log().sum() * dim;  // Sum of log of eigenvalues of Q
+    
+    #pragma omp parallel for
+    for (int obs = 0; obs < n_obs; ++obs) {
+        double quadform_sum = 0;
+        Eigen::VectorXd X_slice = X.col(obs).array() * marginal_sds.array();
+        
+        for (int i = 0; i < dim; ++i) {
+            for (int j = 0; j < dim; ++j) {
+                Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(j), V1.col(i));
+                double lambda = A1(i) + A1(j);
+                
+                double transformed = v.dot(X_slice);
+                quadform_sum += transformed * transformed * lambda;
+            }
+        }
+        
+        int n = dim * dim;
+        log_densities(obs) = -0.5 * (n * std::log(2 * M_PI) + log_det_sum + quadform_sum);
+    }
+    
+    return log_densities;
+}

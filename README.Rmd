@@ -69,9 +69,9 @@ Q <- make_standardized_matern(grid_dim, rho, nu = nu)
 
 
 Z <- rmvn.sparse(
-    n = 1,
-    mu = rep(0, nrow(Q)),
-    CH = Matrix::Cholesky(Q)
+  n = 1,
+  mu = rep(0, nrow(Q)),
+  CH = Matrix::Cholesky(Q)
 )
 
 tibble(
@@ -79,13 +79,13 @@ tibble(
 ) |> 
   mutate(
     id = row_number(),
-      lat = (id - 1) %% grid_dim,
-      lon = cumsum(lat == 0),
-    ) |> 
-    ggplot(aes(lat, lon, fill = Z)) +
-    geom_raster() +
-    scale_fill_viridis_c() +
-    coord_fixed(expand = FALSE)
+    lat = (id - 1) %% grid_dim,
+    lon = cumsum(lat == 0),
+  ) |> 
+  ggplot(aes(lat, lon, fill = Z)) +
+  geom_raster() +
+  scale_fill_viridis_c() +
+  coord_fixed(expand = FALSE)
 stop <- tictoc::toc()
 ```
 
@@ -114,9 +114,9 @@ nu <- 0
 Q <- make_standardized_matern(grid_dim, rho, nu = nu)
 L <- make_standardized_matern_cholesky(grid_dim, rho, nu = nu)
 X <- rmvn.sparse(
-    n = n_replicates,
-    mu = rep(0, nrow(Q)),
-    CH = Matrix::Cholesky(Q)
+  n = n_replicates,
+  mu = rep(0, nrow(Q)),
+  CH = Matrix::Cholesky(Q)
 ) |> t()
 
 X |> dim()
@@ -125,3 +125,28 @@ bench::mark(
   matern_mvn_density(X, grid_dim, rho, nu)
 )
 ```
+
+
+```{r}
+library(dplyr)
+library(sparseMVN)
+library(ggplot2)
+library(stdmatern)
+
+grid_dim <- 100
+n_replicates <- 1
+rho <- 0.5
+nu <- 0
+Q <- make_standardized_matern(grid_dim, rho, nu = nu)
+L <- make_standardized_matern_cholesky(grid_dim, rho, nu = nu)
+X <- rmvn.sparse(
+  n = n_replicates,
+  mu = rep(0, nrow(Q)),
+  CH = Matrix::Cholesky(Q)
+) |> t()
+
+bench::mark(
+  matern_mvn_density(X, grid_dim, rho, nu)
+)
+```
+

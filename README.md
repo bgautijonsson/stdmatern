@@ -51,8 +51,8 @@ bench::mark(
 )
 #> # A tibble: 1 × 6
 #>   expression                             min median `itr/sec` mem_alloc `gc/sec`
-#>   <bch:expr>                           <bch> <bch:>     <dbl> <bch:byt>    <dbl>
-#> 1 make_standardized_matern(dim = 40, …  55ms 55.1ms      18.1    98.3KB        0
+#>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
+#> 1 make_standardized_matern(dim = 40,… 55.1ms 55.5ms      18.0    98.3KB        0
 ```
 
 # Sampling spatial data
@@ -66,9 +66,9 @@ Q <- make_standardized_matern(grid_dim, rho, nu = nu)
 
 
 Z <- rmvn.sparse(
-    n = 1,
-    mu = rep(0, nrow(Q)),
-    CH = Matrix::Cholesky(Q)
+  n = 1,
+  mu = rep(0, nrow(Q)),
+  CH = Matrix::Cholesky(Q)
 )
 
 tibble(
@@ -76,20 +76,20 @@ tibble(
 ) |> 
   mutate(
     id = row_number(),
-      lat = (id - 1) %% grid_dim,
-      lon = cumsum(lat == 0),
-    ) |> 
-    ggplot(aes(lat, lon, fill = Z)) +
-    geom_raster() +
-    scale_fill_viridis_c() +
-    coord_fixed(expand = FALSE)
+    lat = (id - 1) %% grid_dim,
+    lon = cumsum(lat == 0),
+  ) |> 
+  ggplot(aes(lat, lon, fill = Z)) +
+  geom_raster() +
+  scale_fill_viridis_c() +
+  coord_fixed(expand = FALSE)
 ```
 
 <img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
 
 ``` r
 stop <- tictoc::toc()
-#> 3.378 sec elapsed
+#> 3.385 sec elapsed
 ```
 
 # Normal density
@@ -112,7 +112,7 @@ bench::mark(
 #> # A tibble: 1 × 6
 #>   expression                             min median `itr/sec` mem_alloc `gc/sec`
 #>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
-#> 1 matern_mvn_density(x, grid_dim, rh… 69.1ms 71.7ms      13.9    40.6KB        0
+#> 1 matern_mvn_density(x, grid_dim, rh… 5.66ms 5.71ms      175.    40.6KB        0
 ```
 
 The function can also take in a matrix, with ncol = n_replicates and
@@ -126,9 +126,9 @@ nu <- 0
 Q <- make_standardized_matern(grid_dim, rho, nu = nu)
 L <- make_standardized_matern_cholesky(grid_dim, rho, nu = nu)
 X <- rmvn.sparse(
-    n = n_replicates,
-    mu = rep(0, nrow(Q)),
-    CH = Matrix::Cholesky(Q)
+  n = n_replicates,
+  mu = rep(0, nrow(Q)),
+  CH = Matrix::Cholesky(Q)
 ) |> t()
 
 X |> dim()
@@ -143,5 +143,32 @@ bench::mark(
 #> # A tibble: 1 × 6
 #>   expression                             min median `itr/sec` mem_alloc `gc/sec`
 #>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
-#> 1 matern_mvn_density(X, grid_dim, rh… 69.3ms 78.6ms      12.5        0B        0
+#> 1 matern_mvn_density(X, grid_dim, rh… 6.91ms 7.93ms      125.        0B        0
+```
+
+``` r
+library(dplyr)
+library(sparseMVN)
+library(ggplot2)
+library(stdmatern)
+
+grid_dim <- 100
+n_replicates <- 1
+rho <- 0.5
+nu <- 0
+Q <- make_standardized_matern(grid_dim, rho, nu = nu)
+L <- make_standardized_matern_cholesky(grid_dim, rho, nu = nu)
+X <- rmvn.sparse(
+  n = n_replicates,
+  mu = rep(0, nrow(Q)),
+  CH = Matrix::Cholesky(Q)
+) |> t()
+
+bench::mark(
+  matern_mvn_density(X, grid_dim, rho, nu)
+)
+#> # A tibble: 1 × 6
+#>   expression                             min median `itr/sec` mem_alloc `gc/sec`
+#>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
+#> 1 matern_mvn_density(X, grid_dim, rh… 96.7ms 99.7ms      9.44    78.2KB        0
 ```

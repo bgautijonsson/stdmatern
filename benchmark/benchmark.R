@@ -18,8 +18,10 @@ my_fun <- function(dim) {
     )
 }
 
+my_fun(100)
 
-results <- map(c(10, 20, 30, 40, 50, 60, 70, 80, 90, 100), my_fun)
+
+results <- map(c(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200), my_fun)
 
 results |> 
   list_rbind() |> 

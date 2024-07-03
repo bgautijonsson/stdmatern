@@ -99,6 +99,44 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_marginal_variances
+Eigen::VectorXd fast_marginal_variances(const Eigen::SparseMatrix<double>& Q1);
+RcppExport SEXP _stdmatern_fast_marginal_variances(SEXP Q1SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::SparseMatrix<double>& >::type Q1(Q1SEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_marginal_variances(Q1));
+    return rcpp_result_gen;
+END_RCPP
+}
+// log_density_eigen
+double log_density_eigen(const Eigen::VectorXd& x, double eigenvalue, const Eigen::VectorXd& eigenvector);
+RcppExport SEXP _stdmatern_log_density_eigen(SEXP xSEXP, SEXP eigenvalueSEXP, SEXP eigenvectorSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type eigenvalue(eigenvalueSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type eigenvector(eigenvectorSEXP);
+    rcpp_result_gen = Rcpp::wrap(log_density_eigen(x, eigenvalue, eigenvector));
+    return rcpp_result_gen;
+END_RCPP
+}
+// matern_mvn_density_eigen
+Eigen::VectorXd matern_mvn_density_eigen(const Eigen::MatrixXd& X, int dim, double rho, int nu);
+RcppExport SEXP _stdmatern_matern_mvn_density_eigen(SEXP XSEXP, SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(matern_mvn_density_eigen(X, dim, rho, nu));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_stdmatern_make_AR_prec_matrix", (DL_FUNC) &_stdmatern_make_AR_prec_matrix, 2},
@@ -108,6 +146,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_stdmatern_make_standardized_matern_cholesky", (DL_FUNC) &_stdmatern_make_standardized_matern_cholesky, 3},
     {"_stdmatern_dmvn_chol_cpp", (DL_FUNC) &_stdmatern_dmvn_chol_cpp, 2},
     {"_stdmatern_matern_mvn_density_cpp", (DL_FUNC) &_stdmatern_matern_mvn_density_cpp, 4},
+    {"_stdmatern_fast_marginal_variances", (DL_FUNC) &_stdmatern_fast_marginal_variances, 1},
+    {"_stdmatern_log_density_eigen", (DL_FUNC) &_stdmatern_log_density_eigen, 3},
+    {"_stdmatern_matern_mvn_density_eigen", (DL_FUNC) &_stdmatern_matern_mvn_density_eigen, 4},
     {NULL, NULL, 0}
 };
 
