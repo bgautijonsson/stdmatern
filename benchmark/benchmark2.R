@@ -1,54 +1,49 @@
-library(stdmatern)
 library(dplyr)
 library(sparseMVN)
 library(ggplot2)
-grid_dim <- 30
-rho <- 0.8
-nu <- 2
-Q <- make_standardized_matern(grid_dim, rho, nu)
-L <- make_standardized_matern_cholesky(grid_dim, rho, nu)
-chol_Q <- Matrix::Cholesky(Q, perm = FALSE)
+library(stdmatern)
+library(purrr)
+library(patchwork)
 
-comp_fun <- function(iter) {
-  Z <- rmvn.sparse(
-      n = 1,
-      mu = rep(0, nrow(Q)),
-      CH = chol_Q
-  )
 
-  R <- dmvn.sparse(
-    Z,
-    mu = rep(0, nrow(Q)),
-    CH = chol_Q,
-    log = TRUE
-  )
 
-  C <- dmvn_chol(
-    as.numeric(Z), 
-    L
-  )
 
-  tibble(
-    R = R,
-    C = C,
-    iter = iter
-  )
+f1 <- function() {
+  C <- matern_mvn_density(X, grid_dim, rho, nu) |> 
+    sum()
+  return(1)
 }
 
-res <- purrr::map(1:100, comp_fun) |> 
-  purrr::list_rbind()
+f2 <- function() {
+  R <- dmvn.sparse(
+    X |> t(),
+    mu = rep(0, grid_dim^2),
+    CH = chol_Q
+  ) |> 
+    sum()
+  return(1)
+}
 
-res |> select(-iter) |> cor()
+grid_dim <- 20
+n_replicates <- 20
+rho <- 0.5
+nu <- 0
+Q <- make_standardized_matern_eigen(grid_dim, rho, nu)
+chol_Q <- Cholesky(Q)
 
-res |> 
-  ggplot(aes(R, C)) +
-  geom_abline(
-    intercept = 0,
-    slope = 1,
-    lty = 2
-  ) +
-  geom_point()
+X <- rmvn.sparse(
+  n = n_replicates,
+  mu = rep(0, nrow(Q)),
+  CH = chol_Q
+) |> t()
 
-#res |> 
-#  ggplot(aes(C/R)) +
-#  geom_density()
+bench::mark(
+  "Eigen" = f1(),
+  "Basic" = f2()
+) |> 
+  mutate(
+    relative = as.numeric(median / min(median)),
+    .before = min
+  )
+
+
