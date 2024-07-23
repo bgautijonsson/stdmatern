@@ -102,7 +102,7 @@ Eigen::VectorXd fast_marginal_standard_deviations(const Eigen::VectorXd& A1, con
     for (int i = 0; i < dim; ++i) {
         for (int j = 0; j < dim; ++j) {
             Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(i), V1.col(j));
-            double lambda = std::pow(A1(i) + A1(j), nu + 1);
+            double lambda = (nu == 0) ? (A1(i) + A1(j)) : std::pow(A1(i) + A1(j), nu + 1);
             marginal_sds += (v.array().square() / lambda).matrix();
         }
     }
@@ -171,11 +171,19 @@ Eigen::VectorXd matern_mvn_density_eigen(const Eigen::MatrixXd& X, int dim, doub
     // Compute marginal standard deviations
     Eigen::VectorXd marginal_sds = fast_marginal_standard_deviations(A1, V1, dim, nu);
 
+    double log_det = 0; 
 
+    for (int i = 0; i < dim; ++i) {
+        for (int j = 0; j < dim; ++j) {
+            log_det += std::log(A1(i) + A1(j));
+        }
+    }
+    if (nu > 0) {
+        log_det *= (nu + 1);
+    }
     
     for (int obs = 0; obs < n_obs; ++obs) {
         double quadform_sum = 0;
-        double log_det_sum = 0;
         
         // Scale X_slice
         Eigen::VectorXd X_slice = X.col(obs).array() * marginal_sds.array();
@@ -183,15 +191,14 @@ Eigen::VectorXd matern_mvn_density_eigen(const Eigen::MatrixXd& X, int dim, doub
         for (int i = 0; i < dim; ++i) {
             for (int j = 0; j < dim; ++j) {
                 Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(j), V1.col(i));
-                double lambda = std::pow(A1(i) + A1(j), nu + 1);
-                log_det_sum -= std::log(lambda);
+                double lambda = (nu == 0) ? (A1(i) + A1(j)) : std::pow(A1(i) + A1(j), nu + 1);
                 
                 double u = v.dot(X_slice);
                 quadform_sum += u * u * lambda;
             }
         }
         
-        log_densities(obs) = -0.5 * (C + log_det_sum + quadform_sum);
+        log_densities(obs) = -0.5 * (C - log_det + quadform_sum);
     }
 
     return log_densities;

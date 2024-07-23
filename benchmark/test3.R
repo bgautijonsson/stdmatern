@@ -1,8 +1,8 @@
 library(stdmatern)
 library(sparseMVN)
 
-grid_dim <- 10
-rho <- 0.5
+grid_dim <- 20
+rho <- 0.9
 nu <- 0
 
 
@@ -19,18 +19,18 @@ for (i in seq_len(nu)) Q <- Q %*% Q0
 
 mds1 <- fast_marginal_standard_deviations(A1, V1, grid_dim, nu)
 
-mds1 <- numeric(grid_dim^2)
+# mds1 <- numeric(grid_dim^2)
 
-for (i in seq_len(grid_dim)) {
-  for (j in seq_len(grid_dim)) {
-    v <- Matrix::kronecker(V1[, j], V1[, i])
-    a <- A1[i] + A1[j]
-    a <- a^(nu + 1)
+# for (i in seq_len(grid_dim)) {
+#   for (j in seq_len(grid_dim)) {
+#     v <- Matrix::kronecker(V1[, j], V1[, i])
+#     a <- A1[i] + A1[j]
+#     a <- a^(nu + 1)
     
-    mds1 <- mds1 + v^2 / a
-  }
-}
-mds1 <- sqrt(mds1)
+#     mds1 <- mds1 + v^2 / a
+#   }
+# }
+# mds1 <- sqrt(mds1)
 
 mds2 <- Q |> solve() |> diag() |> sqrt()
 
