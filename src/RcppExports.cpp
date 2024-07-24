@@ -23,46 +23,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// make_matern_prec_matrix
-Eigen::SparseMatrix<double> make_matern_prec_matrix(int dim, double rho, int nu);
-RcppExport SEXP _stdmatern_make_matern_prec_matrix(SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
-    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
-    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
-    rcpp_result_gen = Rcpp::wrap(make_matern_prec_matrix(dim, rho, nu));
-    return rcpp_result_gen;
-END_RCPP
-}
-// compute_marginal_variances
-Eigen::SparseMatrix<double> compute_marginal_variances(const Eigen::SparseMatrix<double>& Q);
-RcppExport SEXP _stdmatern_compute_marginal_variances(SEXP QSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::SparseMatrix<double>& >::type Q(QSEXP);
-    rcpp_result_gen = Rcpp::wrap(compute_marginal_variances(Q));
-    return rcpp_result_gen;
-END_RCPP
-}
-// make_standardized_matern
-Eigen::SparseMatrix<double> make_standardized_matern(int dim, double rho, int nu);
-RcppExport SEXP _stdmatern_make_standardized_matern(SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
-    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
-    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
-    rcpp_result_gen = Rcpp::wrap(make_standardized_matern(dim, rho, nu));
-    return rcpp_result_gen;
-END_RCPP
-}
-// fast_marginal_standard_deviations
-Eigen::VectorXd fast_marginal_standard_deviations(const Eigen::VectorXd& A1, const Eigen::MatrixXd& V1, int dim, int nu);
-RcppExport SEXP _stdmatern_fast_marginal_standard_deviations(SEXP A1SEXP, SEXP V1SEXP, SEXP dimSEXP, SEXP nuSEXP) {
+// marginal_sd_eigen
+Eigen::VectorXd marginal_sd_eigen(const Eigen::VectorXd& A1, const Eigen::MatrixXd& V1, int dim, int nu);
+RcppExport SEXP _stdmatern_marginal_sd_eigen(SEXP A1SEXP, SEXP V1SEXP, SEXP dimSEXP, SEXP nuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -70,7 +33,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type V1(V1SEXP);
     Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
     Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_marginal_standard_deviations(A1, V1, dim, nu));
+    rcpp_result_gen = Rcpp::wrap(marginal_sd_eigen(A1, V1, dim, nu));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -101,6 +64,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// matern_mvn_density_eigen_whitened
+Eigen::VectorXd matern_mvn_density_eigen_whitened(const Eigen::MatrixXd& X, int dim, double rho, int nu);
+RcppExport SEXP _stdmatern_matern_mvn_density_eigen_whitened(SEXP XSEXP, SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(matern_mvn_density_eigen_whitened(X, dim, rho, nu));
+    return rcpp_result_gen;
+END_RCPP
+}
 // sample_standardized_matern
 Eigen::MatrixXd sample_standardized_matern(int dim, double rho, int nu, int n_samples);
 RcppExport SEXP _stdmatern_sample_standardized_matern(SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP, SEXP n_samplesSEXP) {
@@ -115,16 +92,69 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// make_matern_prec_matrix
+Eigen::SparseMatrix<double> make_matern_prec_matrix(int dim, double rho, int nu);
+RcppExport SEXP _stdmatern_make_matern_prec_matrix(SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(make_matern_prec_matrix(dim, rho, nu));
+    return rcpp_result_gen;
+END_RCPP
+}
+// marginal_sd_cholesky
+Eigen::SparseMatrix<double> marginal_sd_cholesky(const Eigen::SparseMatrix<double>& Q);
+RcppExport SEXP _stdmatern_marginal_sd_cholesky(SEXP QSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::SparseMatrix<double>& >::type Q(QSEXP);
+    rcpp_result_gen = Rcpp::wrap(marginal_sd_cholesky(Q));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_standardized_matern_cholesky
+Eigen::SparseMatrix<double> make_standardized_matern_cholesky(int dim, double rho, int nu);
+RcppExport SEXP _stdmatern_make_standardized_matern_cholesky(SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(make_standardized_matern_cholesky(dim, rho, nu));
+    return rcpp_result_gen;
+END_RCPP
+}
+// matern_mvn_density_cholesky
+Eigen::VectorXd matern_mvn_density_cholesky(const Eigen::MatrixXd& X, int dim, double rho, int nu);
+RcppExport SEXP _stdmatern_matern_mvn_density_cholesky(SEXP XSEXP, SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(matern_mvn_density_cholesky(X, dim, rho, nu));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_stdmatern_make_AR_prec_matrix", (DL_FUNC) &_stdmatern_make_AR_prec_matrix, 2},
-    {"_stdmatern_make_matern_prec_matrix", (DL_FUNC) &_stdmatern_make_matern_prec_matrix, 3},
-    {"_stdmatern_compute_marginal_variances", (DL_FUNC) &_stdmatern_compute_marginal_variances, 1},
-    {"_stdmatern_make_standardized_matern", (DL_FUNC) &_stdmatern_make_standardized_matern, 3},
-    {"_stdmatern_fast_marginal_standard_deviations", (DL_FUNC) &_stdmatern_fast_marginal_standard_deviations, 4},
+    {"_stdmatern_marginal_sd_eigen", (DL_FUNC) &_stdmatern_marginal_sd_eigen, 4},
     {"_stdmatern_make_standardized_matern_eigen", (DL_FUNC) &_stdmatern_make_standardized_matern_eigen, 3},
     {"_stdmatern_matern_mvn_density_eigen", (DL_FUNC) &_stdmatern_matern_mvn_density_eigen, 4},
+    {"_stdmatern_matern_mvn_density_eigen_whitened", (DL_FUNC) &_stdmatern_matern_mvn_density_eigen_whitened, 4},
     {"_stdmatern_sample_standardized_matern", (DL_FUNC) &_stdmatern_sample_standardized_matern, 4},
+    {"_stdmatern_make_matern_prec_matrix", (DL_FUNC) &_stdmatern_make_matern_prec_matrix, 3},
+    {"_stdmatern_marginal_sd_cholesky", (DL_FUNC) &_stdmatern_marginal_sd_cholesky, 1},
+    {"_stdmatern_make_standardized_matern_cholesky", (DL_FUNC) &_stdmatern_make_standardized_matern_cholesky, 3},
+    {"_stdmatern_matern_mvn_density_cholesky", (DL_FUNC) &_stdmatern_matern_mvn_density_cholesky, 4},
     {NULL, NULL, 0}
 };
 

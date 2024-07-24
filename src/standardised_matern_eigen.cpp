@@ -31,72 +31,8 @@ Eigen::SparseMatrix<double> make_AR_prec_matrix(int dim, double rho) {
     return Q;
 }
 
-// Function to create the 2-dimensional Matérn precision matrix using Kronecker products
 // [[Rcpp::export]]
-Eigen::SparseMatrix<double> make_matern_prec_matrix(int dim, double rho, int nu) {
-    Eigen::SparseMatrix<double> Q = make_AR_prec_matrix(dim, rho);
-    Eigen::SparseMatrix<double> I = Eigen::SparseMatrix<double>(dim, dim);
-    I.setIdentity();
-
-    // Compute Kronecker products
-    Eigen::SparseMatrix<double> QI = Eigen::kroneckerProduct(Q, I);
-    Eigen::SparseMatrix<double> IQ = Eigen::kroneckerProduct(I, Q);
-
-    // Sum the Kronecker products
-    Eigen::SparseMatrix<double> result = QI + IQ;
-    result.makeCompressed();
-
-    // Apply matrix multiplication nu times
-    if (nu > 0) {
-        Eigen::SparseMatrix<double> temp = result;
-        for (int i = 0; i < nu; ++i) {
-            temp = temp * result;
-            temp.makeCompressed();
-        }
-        result = temp;
-    }
-
-    return result;
-}
-
-// Function to compute marginal variances
-// [[Rcpp::export]]
-Eigen::SparseMatrix<double> compute_marginal_variances(const Eigen::SparseMatrix<double>& Q) {
-    Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> llt(Q);
-    int n = Q.rows();
-    Eigen::SparseMatrix<double> D(Q.rows(), Q.cols());
-    D.reserve(Eigen::VectorXi::Constant(n, 1));
-
-    for (int i = 0; i < n; ++i) {
-        Eigen::VectorXd ei = Eigen::VectorXd::Unit(n, i);
-        double marginal_variance = llt.solve(ei)(i);
-        D.insert(i, i) = std::sqrt(marginal_variance);
-    }
-
-    D.makeCompressed();
-    return D;
-}
-
-// Function to create the standardized Matérn precision matrix
-// [[Rcpp::export]]
-Eigen::SparseMatrix<double> make_standardized_matern(int dim, double rho, int nu) {
-    // Create the Matérn precision matrix
-    Eigen::SparseMatrix<double> Q = make_matern_prec_matrix(dim, rho, nu);
-
-    // Compute marginal variances
-    Eigen::SparseMatrix<double> D = compute_marginal_variances(Q);
-
-    Eigen::SparseMatrix<double> Q_standardized = D * Q * D;
-
-    return Q_standardized;
-}
-
-
-
-
-
-// [[Rcpp::export]]
-Eigen::VectorXd fast_marginal_standard_deviations(const Eigen::VectorXd& A1, const Eigen::MatrixXd& V1, int dim, int nu) {
+Eigen::VectorXd marginal_sd_eigen(const Eigen::VectorXd& A1, const Eigen::MatrixXd& V1, int dim, int nu) {
     Eigen::VectorXd marginal_sds = Eigen::VectorXd::Zero(dim * dim);
     
     for (int i = 0; i < dim; ++i) {
@@ -122,7 +58,7 @@ Eigen::SparseMatrix<double> make_standardized_matern_eigen(int dim, double rho, 
     Eigen::MatrixXd V1 = solver.eigenvectors();
 
     // Step 2: Calculate marginal standard deviations
-    Eigen::VectorXd marginal_sds = fast_marginal_standard_deviations(A1, V1, dim, nu);
+    Eigen::VectorXd marginal_sds = marginal_sd_eigen(A1, V1, dim, nu);
 
     // Step 3: Create diagonal matrix of inverse standard deviations
     Eigen::SparseMatrix<double> D(dim * dim, dim * dim);
@@ -169,7 +105,7 @@ Eigen::VectorXd matern_mvn_density_eigen(const Eigen::MatrixXd& X, int dim, doub
     Eigen::MatrixXd V1 = solver.eigenvectors();
 
     // Compute marginal standard deviations
-    Eigen::VectorXd marginal_sds = fast_marginal_standard_deviations(A1, V1, dim, nu);
+    Eigen::VectorXd marginal_sds = marginal_sd_eigen(A1, V1, dim, nu);
 
     double log_det = 0; 
 
@@ -204,6 +140,81 @@ Eigen::VectorXd matern_mvn_density_eigen(const Eigen::MatrixXd& X, int dim, doub
     return log_densities;
 }
 
+// [[Rcpp::export]]
+Eigen::VectorXd matern_mvn_density_eigen_whitened(const Eigen::MatrixXd& X, int dim, double rho, int nu) {
+    int n_obs = X.cols();
+    int N = dim * dim;
+    Eigen::VectorXd log_densities = Eigen::VectorXd::Zero(n_obs);
+    Eigen::VectorXd quadform_sums = Eigen::VectorXd::Zero(n_obs);
+    const double C = N * std::log(2 * M_PI);
+
+    // Create precision matrix
+    Eigen::MatrixXd Q1 = make_AR_prec_matrix(dim, rho);
+
+    // Perform eigendecomposition
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(Q1);
+    Eigen::VectorXd A1 = solver.eigenvalues();
+    Eigen::MatrixXd V1 = solver.eigenvectors();
+
+    // Compute marginal standard deviations
+    Eigen::VectorXd marginal_sds = marginal_sd_eigen(A1, V1, dim, nu);
+
+    // Create diagonal matrix D
+    Eigen::DiagonalMatrix<double, Eigen::Dynamic> D(N);
+    D.diagonal() = marginal_sds;
+
+    double log_det = 0;
+
+    #pragma omp parallel
+    {
+        Eigen::VectorXd local_quadform_sums = Eigen::VectorXd::Zero(n_obs);
+
+        #pragma omp for reduction(+:log_det)
+        for (int i = 0; i < dim; ++i) {
+            for (int j = 0; j < dim; ++j) {
+                // First calculate the Kronecker product
+                Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(j), V1.col(i));
+                
+                // Then scale it
+                v = D * v;
+                
+                // Now calculate the norm
+                double norm_v = v.norm();
+                
+                // Normalize v
+                v /= norm_v;
+                
+                // Compute the eigenvalue
+                double A = (nu == 0) ? (A1(i) + A1(j)) : std::pow(A1(i) + A1(j), nu + 1);
+                
+                // Standardize the eigenvalue
+                double lambda = A * (norm_v * norm_v);
+
+                log_det += std::log(lambda);
+                
+                // Loop over observations
+                for (int obs = 0; obs < n_obs; ++obs) {
+                    double u = v.dot(X.col(obs));
+                    local_quadform_sums(obs) += u * u * lambda;
+                }
+            }
+        }
+
+        #pragma omp critical
+        {
+            quadform_sums += local_quadform_sums;
+        }
+    }
+    
+    // Compute final log densities
+    #pragma omp parallel for
+    for (int obs = 0; obs < n_obs; ++obs) {
+        log_densities(obs) = -0.5 * (C - log_det + quadform_sums(obs));
+    }
+
+    return log_densities;
+}
+
 // Function to generate samples from a standardized Matérn field
 // [[Rcpp::export]]
 Eigen::MatrixXd sample_standardized_matern(int dim, double rho, int nu, int n_samples) {
@@ -216,7 +227,7 @@ Eigen::MatrixXd sample_standardized_matern(int dim, double rho, int nu, int n_sa
     Eigen::MatrixXd V1 = solver.eigenvectors();
 
     // Step 3: Compute marginal standard deviations
-    Eigen::VectorXd marginal_sds = fast_marginal_standard_deviations(A1, V1, dim, nu);
+    Eigen::VectorXd marginal_sds = marginal_sd_eigen(A1, V1, dim, nu);
 
     // Step 4: Prepare for sampling
     int D = dim * dim;

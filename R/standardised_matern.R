@@ -4,6 +4,6 @@ matern_mvn_density <- function(X, dim, rho, nu) {
     X <- matrix(X, ncol = 1)
   }
 
-  matern_mvn_density_eigen(X, dim, rho, nu)
+  matern_mvn_density_eigen_whitened(X, dim, rho, nu)
 }
 

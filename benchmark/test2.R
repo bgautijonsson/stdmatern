@@ -79,16 +79,16 @@ fun2 <- function(rho) {
 
 neg_ll_function <- function(params) {
     rho <- params[1]
-    # - sum(matern_mvn_density(Z, grid_dim, rho, nu))
+    - sum(matern_mvn_density_eigen_whitened(Z, grid_dim, rho, nu))
     
     #-fun2(rho)
-    -eval_fun(rho)
+    #-eval_fun(rho)
 }
 
 grid_dim <- 10
-rho <- 0.9
+rho <- 0.3
 n_replicate <- 10
-nu <- 2
+nu <- 0
 
 
 Z <- sample_standardized_matern(grid_dim, rho, nu, n_replicate)
@@ -100,6 +100,15 @@ res <- optimize(
 res
 
 
+f3 <- function(rho) {
+    Q <- make_standardized_matern_eigen(grid_dim, rho, nu)
+    dmvn.sparse(
+        t(Z), 
+        mu = rep(0, grid_dim^2), 
+        CH = Cholesky(Q)
+    ) |> 
+        sum()
+}
 
 grid_dim <- 10
 rho <- 0.5
@@ -109,34 +118,15 @@ nu <- 0
 
 Z <- sample_standardized_matern(grid_dim, rho, nu, n_replicate)
 
-Z <- matrix(
-    rnorm(grid_dim^2 * n_replicate),
-    nrow = grid_dim^2,
-    ncol = n_replicate
-)
-
-Z <- matrix(
-    0,
-    nrow = grid_dim^2,
-    ncol = n_replicate
-)
-
-Q <- make_standardized_matern_eigen(grid_dim, rho, nu)
-
-Z <- rmvn.sparse(
-    n_replicate,
-    mu = rep(0, grid_dim^2),
-    CH = Cholesky(Q)
-) |> t()
-
 map(
-    seq(0.1, 0.9, length.out = 100),
+    seq(0.1, 0.9, length.out = 40),
     \(rho) {
         tibble(
             rho = rho,
-            chol = -fun2(rho),
-            #eigen = -sum(matern_mvn_density(Z, grid_dim, rho, nu))
-            eigen = -eval_fun(rho)
+            #chol = -fun2(rho),
+            chol = -f3(rho),
+            eigen = -sum(matern_mvn_density(Z, grid_dim, rho, nu))
+            #eigen = -eval_fun(rho)
         )
     }
 ) |> 
@@ -149,7 +139,7 @@ ggplot(aes(rho, chol)) +
 geom_line(aes(col = "Cholesky")) +
 geom_line(aes(y = eigen, col = "Eigen"))+
 geom_vline(aes(xintercept = min_chol, col = "Cholesky"), lty = 2) +
-geom_vline(aes(xintercept = min_eig, col = "Eigen"), lty = 2) 
+geom_vline(aes(xintercept = min_eig, col = "Eigen"), lty = 2)  +
 scale_y_log10()
 
 

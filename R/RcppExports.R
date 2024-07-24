@@ -5,20 +5,8 @@ make_AR_prec_matrix <- function(dim, rho) {
     .Call(`_stdmatern_make_AR_prec_matrix`, dim, rho)
 }
 
-make_matern_prec_matrix <- function(dim, rho, nu) {
-    .Call(`_stdmatern_make_matern_prec_matrix`, dim, rho, nu)
-}
-
-compute_marginal_variances <- function(Q) {
-    .Call(`_stdmatern_compute_marginal_variances`, Q)
-}
-
-make_standardized_matern <- function(dim, rho, nu) {
-    .Call(`_stdmatern_make_standardized_matern`, dim, rho, nu)
-}
-
-fast_marginal_standard_deviations <- function(A1, V1, dim, nu) {
-    .Call(`_stdmatern_fast_marginal_standard_deviations`, A1, V1, dim, nu)
+marginal_sd_eigen <- function(A1, V1, dim, nu) {
+    .Call(`_stdmatern_marginal_sd_eigen`, A1, V1, dim, nu)
 }
 
 make_standardized_matern_eigen <- function(dim, rho, nu) {
@@ -29,7 +17,27 @@ matern_mvn_density_eigen <- function(X, dim, rho, nu) {
     .Call(`_stdmatern_matern_mvn_density_eigen`, X, dim, rho, nu)
 }
 
+matern_mvn_density_eigen_whitened <- function(X, dim, rho, nu) {
+    .Call(`_stdmatern_matern_mvn_density_eigen_whitened`, X, dim, rho, nu)
+}
+
 sample_standardized_matern <- function(dim, rho, nu, n_samples) {
     .Call(`_stdmatern_sample_standardized_matern`, dim, rho, nu, n_samples)
+}
+
+make_matern_prec_matrix <- function(dim, rho, nu) {
+    .Call(`_stdmatern_make_matern_prec_matrix`, dim, rho, nu)
+}
+
+marginal_sd_cholesky <- function(Q) {
+    .Call(`_stdmatern_marginal_sd_cholesky`, Q)
+}
+
+make_standardized_matern_cholesky <- function(dim, rho, nu) {
+    .Call(`_stdmatern_make_standardized_matern_cholesky`, dim, rho, nu)
+}
+
+matern_mvn_density_cholesky <- function(X, dim, rho, nu) {
+    .Call(`_stdmatern_matern_mvn_density_cholesky`, X, dim, rho, nu)
 }
 

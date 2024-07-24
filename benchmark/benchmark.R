@@ -4,11 +4,16 @@ library(purrr)
 library(tidyverse)
 library(glue)
 
+x <- sample_standardized_matern(5, 0.5, 0, 1)
+
+matern_mvn_density_cholesky(x, 5, 0.5, 0)
+matern_mvn_density_eigen_whitened(x, 5, 0.5, 0)
 
 my_fun <- function(dim) {
-  x <- rnorm(dim^2)
+  x <- sample_standardized_matern(dim, 0.5, 0, 1)
   bench::mark(
-    matern_mvn_density(x, dim, 0.5, 0),
+    "Cholesky" = matern_mvn_density_cholesky(x, dim, 0.5, 0),
+    "Eigen" = matern_mvn_density_eigen_whitened(x, dim, 0.5, 0),
     filter_gc = FALSE,
     iterations = 10,
     check = FALSE
