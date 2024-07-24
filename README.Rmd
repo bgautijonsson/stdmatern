@@ -92,6 +92,8 @@ The package also implements a method for calculating the log-density of a multiv
 ```{r}
 library(purrr)
 library(glue)
+library(gt)
+
 my_fun <- function(dim) {
   x <- sample_standardized_matern(dim, 0.5, 0, 1)
   bench::mark(
@@ -114,5 +116,6 @@ results |>
     Field_size = glue("{Q_size^2} locations"),
     Q_size = glue("{Q_size^2}x{Q_size^2}")
   ) |> 
-  select(Field_size, Q_size, time)
+  select(Field_size, Q_size, time) |> 
+  gt()
 ```
