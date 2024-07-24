@@ -10,7 +10,6 @@ using namespace Rcpp;
 using namespace Eigen;
 
 
-
 // Function to create a 1-dimensional AR(1) precision matrix
 // [[Rcpp::export]]
 Eigen::SparseMatrix<double> make_AR_prec_matrix(int dim, double rho) {
@@ -88,60 +87,8 @@ Eigen::SparseMatrix<double> make_standardized_matern_eigen(int dim, double rho, 
     return Q_standardized;
 }
 
-
 // [[Rcpp::export]]
 Eigen::VectorXd matern_mvn_density_eigen(const Eigen::MatrixXd& X, int dim, double rho, int nu) {
-    int n_obs = X.cols();
-    int D = dim * dim;
-    Eigen::VectorXd log_densities(n_obs);
-    const double C = D * std::log(2 * M_PI);
-
-    // Create precision matrix
-    Eigen::MatrixXd Q1 = make_AR_prec_matrix(dim, rho);
-
-    // Perform eigendecomposition
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(Q1);
-    Eigen::VectorXd A1 = solver.eigenvalues();
-    Eigen::MatrixXd V1 = solver.eigenvectors();
-
-    // Compute marginal standard deviations
-    Eigen::VectorXd marginal_sds = marginal_sd_eigen(A1, V1, dim, nu);
-
-    double log_det = 0; 
-
-    for (int i = 0; i < dim; ++i) {
-        for (int j = 0; j < dim; ++j) {
-            log_det += std::log(A1(i) + A1(j));
-        }
-    }
-    if (nu > 0) {
-        log_det *= (nu + 1);
-    }
-    
-    for (int obs = 0; obs < n_obs; ++obs) {
-        double quadform_sum = 0;
-        
-        // Scale X_slice
-        Eigen::VectorXd X_slice = X.col(obs).array() * marginal_sds.array();
-        
-        for (int i = 0; i < dim; ++i) {
-            for (int j = 0; j < dim; ++j) {
-                Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(j), V1.col(i));
-                double lambda = (nu == 0) ? (A1(i) + A1(j)) : std::pow(A1(i) + A1(j), nu + 1);
-                
-                double u = v.dot(X_slice);
-                quadform_sum += u * u * lambda;
-            }
-        }
-        
-        log_densities(obs) = -0.5 * (C - log_det + quadform_sum);
-    }
-
-    return log_densities;
-}
-
-// [[Rcpp::export]]
-Eigen::VectorXd matern_mvn_density_eigen_whitened(const Eigen::MatrixXd& X, int dim, double rho, int nu) {
     int n_obs = X.cols();
     int N = dim * dim;
     Eigen::VectorXd log_densities = Eigen::VectorXd::Zero(n_obs);
@@ -215,7 +162,6 @@ Eigen::VectorXd matern_mvn_density_eigen_whitened(const Eigen::MatrixXd& X, int 
     return log_densities;
 }
 
-// Function to generate samples from a standardized Matérn field
 // [[Rcpp::export]]
 Eigen::MatrixXd sample_standardized_matern(int dim, double rho, int nu, int n_samples) {
     // Step 1: Create 1D AR(1) precision matrix
@@ -234,20 +180,24 @@ Eigen::MatrixXd sample_standardized_matern(int dim, double rho, int nu, int n_sa
     Eigen::MatrixXd samples(D, n_samples);
     
     // Random number generation
-    std::random_device rd;
-    std::mt19937 gen(rd());
+    std::vector<std::mt19937> generators(omp_get_max_threads());
+    for (auto& gen : generators) {
+        std::random_device rd;
+        gen.seed(rd());
+    }
     std::normal_distribution<> d(0, 1);
 
     // Step 5: Generate samples
+    #pragma omp parallel for
     for (int s = 0; s < n_samples; ++s) {
-
+        int thread_id = omp_get_thread_num();
         Eigen::VectorXd x = Eigen::VectorXd::Zero(D);
 
         for (int i = 0; i < dim; ++i) {
             for (int j = 0; j < dim; ++j) {
                 Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(j), V1.col(i));
                 double lambda = std::pow(A1(i) + A1(j), -(nu + 1.0) / 2.0);
-                x += lambda * d(gen) * v;
+                x += lambda * d(generators[thread_id]) * v;
             }
         }
 

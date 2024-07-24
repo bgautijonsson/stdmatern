@@ -1,6 +1,8 @@
 #include <RcppEigen.h>
 #include <omp.h>
 #include <random>
+#include <queue>
+#include <unordered_set>
 
 
 // [[Rcpp::depends(RcppEigen)]]
@@ -74,6 +76,8 @@ Eigen::SparseMatrix<double> marginal_sd_cholesky(const Eigen::SparseMatrix<doubl
     return D;
 }
 
+
+
 // Function to create the standardized Matérn precision matrix
 // [[Rcpp::export]]
 Eigen::SparseMatrix<double> make_standardized_matern_cholesky(int dim, double rho, int nu) {
@@ -88,63 +92,103 @@ Eigen::SparseMatrix<double> make_standardized_matern_cholesky(int dim, double rh
     return Q_standardized;
 }
 
-std::pair<Eigen::SparseMatrix<double>, double> compute_normalized_cholesky(const Eigen::SparseMatrix<double>& Q) {
+double compute_sigma_ii(const Eigen::MatrixXd& L, int i) {
+    int n = L.rows();
+    Eigen::VectorXd ei = Eigen::VectorXd::Unit(n, i);
+    
+    // Solve Ly = e_i
+    Eigen::VectorXd y = L.triangularView<Eigen::Lower>().solve(ei);
+    
+    // Solve L^T x = y
+    Eigen::VectorXd x = L.triangularView<Eigen::Lower>().adjoint().solve(y);
+    
+    // Return x_i
+    return x(i);
+}
+
+// Helper function to compute I(i)
+std::vector<std::set<int>> compute_I(const Eigen::SparseMatrix<double>& L) {
+    int n = L.rows();
+    std::vector<std::set<int>> I(n);
+    
+    for (int k = 0; k < L.outerSize(); ++k) {
+        for (Eigen::SparseMatrix<double>::InnerIterator it(L, k); it; ++it) {
+            if (it.row() > it.col()) {
+                I[it.col()].insert(it.row());
+            }
+        }
+    }
+    
+    return I;
+}
+
+// Rue's algorithm for computing marginal variances
+Eigen::VectorXd compute_marginal_variances_rue(const Eigen::SparseMatrix<double>& Q) {
+    int n = Q.rows();
+    Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> llt(Q);
+    Eigen::SparseMatrix<double> L = llt.matrixL();
+    
+    std::vector<std::set<int>> I = compute_I(L);
+    
+    Eigen::MatrixXd Sigma(n, n);
+    
+    for (int i = n - 1; i >= 0; --i) {
+        for (int j = n - 1; j >= i; --j) {
+            if (i == j) {
+                Sigma(i, i) = 1.0 / (L.coeff(i, i) * L.coeff(i, i));
+            } else {
+                double sum = 0.0;
+                for (int k : I[i]) {
+                    sum += L.coeff(k, i) * Sigma(k, j);
+                }
+                Sigma(i, j) = Sigma(j, i) = -sum / L.coeff(i, i);
+            }
+        }
+    }
+    
+    return Sigma.diagonal();
+}
+
+// [[Rcpp::export]]
+Eigen::SparseMatrix<double> compute_normalized_cholesky(const Eigen::SparseMatrix<double>& Q) {
     Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> llt(Q);
     int n = Q.rows();
     Eigen::SparseMatrix<double> L = llt.matrixL();
     
-    double log_det = 0.0;
-    Eigen::VectorXd D_inv(n);
+    // Compute marginal variances using Rue's algorithm
+    Eigen::VectorXd marginal_vars = compute_marginal_variances_rue(L);
 
-    #pragma omp parallel
-    {
-        #pragma omp for reduction(+:log_det)
-        for (int i = 0; i < n; ++i) {
-            Eigen::VectorXd ei = Eigen::VectorXd::Unit(n, i);
-            double marginal_variance = llt.solve(ei)(i);
-            double marginal_sd = std::sqrt(marginal_variance);
-            D_inv(i) = 1.0 / marginal_sd;
-            log_det += std::log(L.coeff(i, i));
-        }
 
-        // Normalize L
-        #pragma omp for
-        for (int k = 0; k < L.outerSize(); ++k) {
-            for (Eigen::SparseMatrix<double>::InnerIterator it(L, k); it; ++it) {
-                it.valueRef() *= D_inv(it.row());
-            }
-        }
-    }
-
+    // Create diagonal matrix D
+    Eigen::DiagonalMatrix<double, Eigen::Dynamic> D = marginal_vars.array().sqrt().matrix().asDiagonal();
+    
+    // Compute standardized Cholesky factor
+    L = D * L;
     L.makeCompressed();
-    return std::make_pair(L, 2.0 * log_det);
+    return L;
 }
 
 // [[Rcpp::export]]
 Eigen::VectorXd matern_mvn_density_cholesky(const Eigen::MatrixXd& X, int dim, double rho, int nu) {
-    int n = X.rows();  // number of elements in each observation
+    int N = X.rows();  // number of elements in each observation
     int n_obs = X.cols();  // number of observations
-    const double log_2pi = std::log(2.0 * M_PI);
+    const double C = N * std::log(2.0 * M_PI);
     
     // Create the Matérn precision matrix
     Eigen::SparseMatrix<double> Q = make_matern_prec_matrix(dim, rho, nu);
     
-    // Compute normalized Cholesky factor and log determinant
-    auto [L, log_det] = compute_normalized_cholesky(Q);
+    // Compute normalized Cholesky factor
+    Eigen::SparseMatrix<double> L = compute_normalized_cholesky(Q);
+
+    // Compute log determinant
+    double log_det = 2 * L.diagonal().array().log().sum();
     
-    // Prepare output vector
-    Eigen::VectorXd log_densities(n_obs);
+    // Compute all quadratic forms at once
+    Eigen::MatrixXd Z = L.transpose() * X;
+    Eigen::VectorXd quadforms = Z.colwise().squaredNorm();
     
-    // Compute log densities for each observation
-    #pragma omp parallel for
-    for (int i = 0; i < n_obs; ++i) {
-        // Compute quadratic form (x^T * Q * x)
-        Eigen::VectorXd z = L.triangularView<Eigen::Lower>().solve(X.col(i));
-        double quadform = z.squaredNorm();
-        
-        // Compute log density
-        log_densities(i) = -0.5 * (n * log_2pi + log_det + quadform);
-    }
+    // Compute log densities for all observations
+    Eigen::VectorXd log_densities = -0.5 * (C - log_det + quadforms.array());
     
     return log_densities;
 }

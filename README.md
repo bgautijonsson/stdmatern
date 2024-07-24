@@ -20,27 +20,57 @@ library(stdmatern)
 ```
 
 ``` r
-Q <- make_standardized_matern(dim = 2, rho = 0.5, nu = 0)
+Q <- make_standardized_matern(dim = 3, rho = 0.5, nu = 0)
 ```
 
 ``` r
 Q
-#> 4 x 4 sparse Matrix of class "dgCMatrix"
-#>                                                 
-#> [1,]  1.1666667 -0.2916667 -0.2916667  .        
-#> [2,] -0.2916667  1.1666667  .         -0.2916667
-#> [3,] -0.2916667  .          1.1666667 -0.2916667
-#> [4,]  .         -0.2916667 -0.2916667  1.1666667
+#> 9 x 9 sparse Matrix of class "dgCMatrix"
+#>                                                                                
+#>  [1,]  1.155093 -0.2808520  .        -0.2808520  .          .          .       
+#>  [2,] -0.280852  1.2291667 -0.280852  .         -0.2661131  .          .       
+#>  [3,]  .        -0.2808520  1.155093  .          .         -0.2808520  .       
+#>  [4,] -0.280852  .          .         1.2291667 -0.2661131  .         -0.280852
+#>  [5,]  .        -0.2661131  .        -0.2661131  1.2962963 -0.2661131  .       
+#>  [6,]  .         .         -0.280852  .         -0.2661131  1.2291667  .       
+#>  [7,]  .         .          .        -0.2808520  .          .          1.155093
+#>  [8,]  .         .          .         .         -0.2661131  .         -0.280852
+#>  [9,]  .         .          .         .          .         -0.2808520  .       
+#>                           
+#>  [1,]  .          .       
+#>  [2,]  .          .       
+#>  [3,]  .          .       
+#>  [4,]  .          .       
+#>  [5,] -0.2661131  .       
+#>  [6,]  .         -0.280852
+#>  [7,] -0.2808520  .       
+#>  [8,]  1.2291667 -0.280852
+#>  [9,] -0.2808520  1.155093
 ```
 
 ``` r
 Q |> solve()
-#> 4 x 4 sparse Matrix of class "dgCMatrix"
-#>                                             
-#> [1,] 1.0000000 0.2857143 0.2857143 0.1428571
-#> [2,] 0.2857143 1.0000000 0.1428571 0.2857143
-#> [3,] 0.2857143 0.1428571 1.0000000 0.2857143
-#> [4,] 0.1428571 0.2857143 0.2857143 1.0000000
+#> 9 x 9 sparse Matrix of class "dgCMatrix"
+#>                                                                       
+#>  [1,] 1.00000000 0.27611088 0.08016032 0.27611088 0.1353601 0.05357375
+#>  [2,] 0.27611088 1.00000000 0.27611088 0.13559322 0.2783556 0.13559322
+#>  [3,] 0.08016032 0.27611088 1.00000000 0.05357375 0.1353601 0.27611088
+#>  [4,] 0.27611088 0.13559322 0.05357375 1.00000000 0.2783556 0.08474576
+#>  [5,] 0.13536011 0.27835560 0.13536011 0.27835560 1.0000000 0.27835560
+#>  [6,] 0.05357375 0.13559322 0.27611088 0.08474576 0.2783556 1.00000000
+#>  [7,] 0.08016032 0.05357375 0.02605210 0.27611088 0.1353601 0.05357375
+#>  [8,] 0.05357375 0.08474576 0.05357375 0.13559322 0.2783556 0.13559322
+#>  [9,] 0.02605210 0.05357375 0.08016032 0.05357375 0.1353601 0.27611088
+#>                                       
+#>  [1,] 0.08016032 0.05357375 0.02605210
+#>  [2,] 0.05357375 0.08474576 0.05357375
+#>  [3,] 0.02605210 0.05357375 0.08016032
+#>  [4,] 0.27611088 0.13559322 0.05357375
+#>  [5,] 0.13536011 0.27835560 0.13536011
+#>  [6,] 0.05357375 0.13559322 0.27611088
+#>  [7,] 1.00000000 0.27611088 0.08016032
+#>  [8,] 0.27611088 1.00000000 0.27611088
+#>  [9,] 0.08016032 0.27611088 1.00000000
 ```
 
 Creating and standardizing a 1600x1600 precision matrix
@@ -51,25 +81,21 @@ bench::mark(
 )
 #> # A tibble: 1 × 6
 #>   expression                             min median `itr/sec` mem_alloc `gc/sec`
-#>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
-#> 1 make_standardized_matern(dim = 40,… 55.1ms 55.5ms      18.0    98.3KB        0
+#>   <bch:expr>                           <bch> <bch:>     <dbl> <bch:byt>    <dbl>
+#> 1 make_standardized_matern(dim = 40, … 1.3ms 1.32ms      755.    98.3KB        0
 ```
 
 # Sampling spatial data
 
+Here we sample highly dependent spatial data on a 100x100 grid,
+i.e. there’s 10.000 observational locations.
+
 ``` r
 start <- tictoc::tic()
-grid_dim <- 80
+grid_dim <- 100
 rho <- 0.9
 nu <- 2
-Q <- make_standardized_matern(grid_dim, rho, nu = nu)
-
-
-Z <- rmvn.sparse(
-  n = 1,
-  mu = rep(0, nrow(Q)),
-  CH = Matrix::Cholesky(Q)
-)
+Z <- sample_standardized_matern(grid_dim, rho, nu, 1)
 
 tibble(
   Z = as.numeric(Z)
@@ -89,86 +115,55 @@ tibble(
 
 ``` r
 stop <- tictoc::toc()
-#> 3.385 sec elapsed
+#> 0.21 sec elapsed
 ```
 
 # Normal density
 
 The package also implements a method for calculating the log-density of
-a multivariate normal by creating and scaling an appropriate precision
-matrix. This function is meant for use inside MCMC samplers or
-optimization algorithms. If you plan to use the same precision matrix
-often, it’s better to create and store the precision matrix instead of
-calculating it again.
+a multivariate normal with appropriate precision matrix. The function
+avoids creating the precision matrix Q by using known results about
+kroncker sums and eigendecompositions. This causes the density
+evaluation to be blazingly fast, even for very large spatial fields.
 
 ``` r
-grid_dim <- 50
-rho <- 0.5
-nu <- 0
-x <- rnorm(grid_dim^2)
-bench::mark(
-  matern_mvn_density(x, grid_dim, rho, nu)
-)
-#> # A tibble: 1 × 6
-#>   expression                             min median `itr/sec` mem_alloc `gc/sec`
-#>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
-#> 1 matern_mvn_density(x, grid_dim, rh… 5.66ms 5.71ms      175.    40.6KB        0
-```
+library(purrr)
+library(glue)
+my_fun <- function(dim) {
+  x <- sample_standardized_matern(dim, 0.5, 0, 1)
+  bench::mark(
+    matern_mvn_density(x, dim, 0.5, 0),
+    filter_gc = FALSE,
+    iterations = 10,
+    check = FALSE
+  ) |> 
+    mutate(
+      dim = dim
+    )
+}
 
-The function can also take in a matrix, with ncol = n_replicates and
-nrow = grim_dim^2
+results <- map(c(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200), my_fun)
 
-``` r
-grid_dim <- 50
-n_replicates <- 10
-rho <- 0.5
-nu <- 0
-Q <- make_standardized_matern(grid_dim, rho, nu = nu)
-L <- make_standardized_matern_cholesky(grid_dim, rho, nu = nu)
-X <- rmvn.sparse(
-  n = n_replicates,
-  mu = rep(0, nrow(Q)),
-  CH = Matrix::Cholesky(Q)
-) |> t()
-
-X |> dim()
-#> [1] 2500   10
-```
-
-``` r
-
-bench::mark(
-  matern_mvn_density(X, grid_dim, rho, nu)
-)
-#> # A tibble: 1 × 6
-#>   expression                             min median `itr/sec` mem_alloc `gc/sec`
-#>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
-#> 1 matern_mvn_density(X, grid_dim, rh… 6.91ms 7.93ms      125.        0B        0
-```
-
-``` r
-library(dplyr)
-library(sparseMVN)
-library(ggplot2)
-library(stdmatern)
-
-grid_dim <- 100
-n_replicates <- 1
-rho <- 0.5
-nu <- 0
-Q <- make_standardized_matern(grid_dim, rho, nu = nu)
-L <- make_standardized_matern_cholesky(grid_dim, rho, nu = nu)
-X <- rmvn.sparse(
-  n = n_replicates,
-  mu = rep(0, nrow(Q)),
-  CH = Matrix::Cholesky(Q)
-) |> t()
-
-bench::mark(
-  matern_mvn_density(X, grid_dim, rho, nu)
-)
-#> # A tibble: 1 × 6
-#>   expression                             min median `itr/sec` mem_alloc `gc/sec`
-#>   <bch:expr>                          <bch:> <bch:>     <dbl> <bch:byt>    <dbl>
-#> 1 matern_mvn_density(X, grid_dim, rh… 96.7ms 99.7ms      9.44    78.2KB        0
+results |> 
+  list_rbind() |> 
+  select(Q_size = dim,time = median, memory = mem_alloc) |> 
+  mutate(
+    Field_size = glue("{Q_size^2} locations"),
+    Q_size = glue("{Q_size^2}x{Q_size^2}")
+  ) |> 
+  select(Field_size, Q_size, time)
+#> # A tibble: 11 × 2
+#>    Field_size      Q_size     
+#>    <glue>          <glue>     
+#>  1 100 locations   100x100    
+#>  2 400 locations   400x400    
+#>  3 900 locations   900x900    
+#>  4 1600 locations  1600x1600  
+#>  5 2500 locations  2500x2500  
+#>  6 3600 locations  3600x3600  
+#>  7 4900 locations  4900x4900  
+#>  8 6400 locations  6400x6400  
+#>  9 8100 locations  8100x8100  
+#> 10 10000 locations 10000x10000
+#> 11 40000 locations 40000x40000
 ```

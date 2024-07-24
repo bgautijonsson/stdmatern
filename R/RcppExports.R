@@ -17,10 +17,6 @@ matern_mvn_density_eigen <- function(X, dim, rho, nu) {
     .Call(`_stdmatern_matern_mvn_density_eigen`, X, dim, rho, nu)
 }
 
-matern_mvn_density_eigen_whitened <- function(X, dim, rho, nu) {
-    .Call(`_stdmatern_matern_mvn_density_eigen_whitened`, X, dim, rho, nu)
-}
-
 sample_standardized_matern <- function(dim, rho, nu, n_samples) {
     .Call(`_stdmatern_sample_standardized_matern`, dim, rho, nu, n_samples)
 }
@@ -35,6 +31,10 @@ marginal_sd_cholesky <- function(Q) {
 
 make_standardized_matern_cholesky <- function(dim, rho, nu) {
     .Call(`_stdmatern_make_standardized_matern_cholesky`, dim, rho, nu)
+}
+
+compute_normalized_cholesky <- function(Q) {
+    .Call(`_stdmatern_compute_normalized_cholesky`, Q)
 }
 
 matern_mvn_density_cholesky <- function(X, dim, rho, nu) {

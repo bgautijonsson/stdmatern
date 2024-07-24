@@ -5,57 +5,47 @@ library(stdmatern)
 library(purrr)
 library(patchwork)
 
-grid_dim <- 10
-n_replicates <- 20
+grid_dim <- 20
+n_replicates <- 10
 rho <- 0.5
-nu <- 1
-Q <- make_standardized_matern_eigen(grid_dim, rho, nu)
-chol_Q <- Cholesky(Q)
+nu <- 0
 
 
 
 my_fun <- function(iter) {
   
-  X <- rmvn.sparse(
-    n = n_replicates,
-    mu = rep(0, nrow(Q)),
-    CH = chol_Q
-  ) |> t()
+  X <- sample_standardized_matern(grid_dim, rho, nu, n_replicates)
 
-  C <- matern_mvn_density(X, grid_dim, rho, nu) |> 
+  Eigen <- matern_mvn_density_eigen(X, grid_dim, rho, nu) |> 
     sum()
 
-  R <- dmvn.sparse(
-    X |> t(),
-    mu = rep(0, grid_dim^2),
-    CH = chol_Q
-  ) |> 
+  Choll <- matern_mvn_density_cholesky(X, grid_dim, rho, nu) |> 
     sum()
 
 
   tibble(
-    C = C,
-    R = R,
+    Eigen = Eigen,
+    Cholesky = Choll,
     iter = iter
   )
 }
 
-d <- map(seq_len(200), my_fun) |> 
+d <- map(seq_len(100), my_fun) |> 
   list_rbind()
 
 
 
 p1 <- d |> 
-  ggplot(aes(C, R)) +
+  ggplot(aes(Eigen, Cholesky)) +
   geom_point()
 
 
 
 p2 <- d |> 
   mutate(
-    diff = C / R
+    diff = Eigen / Cholesky
   ) |> 
-  ggplot(aes(C, diff)) +
+  ggplot(aes(Eigen, diff)) +
   geom_point()
 
 p1 + p2

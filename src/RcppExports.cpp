@@ -64,20 +64,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// matern_mvn_density_eigen_whitened
-Eigen::VectorXd matern_mvn_density_eigen_whitened(const Eigen::MatrixXd& X, int dim, double rho, int nu);
-RcppExport SEXP _stdmatern_matern_mvn_density_eigen_whitened(SEXP XSEXP, SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
-    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
-    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
-    rcpp_result_gen = Rcpp::wrap(matern_mvn_density_eigen_whitened(X, dim, rho, nu));
-    return rcpp_result_gen;
-END_RCPP
-}
 // sample_standardized_matern
 Eigen::MatrixXd sample_standardized_matern(int dim, double rho, int nu, int n_samples);
 RcppExport SEXP _stdmatern_sample_standardized_matern(SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP, SEXP n_samplesSEXP) {
@@ -129,6 +115,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// compute_normalized_cholesky
+Eigen::SparseMatrix<double> compute_normalized_cholesky(const Eigen::SparseMatrix<double>& Q);
+RcppExport SEXP _stdmatern_compute_normalized_cholesky(SEXP QSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::SparseMatrix<double>& >::type Q(QSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_normalized_cholesky(Q));
+    return rcpp_result_gen;
+END_RCPP
+}
 // matern_mvn_density_cholesky
 Eigen::VectorXd matern_mvn_density_cholesky(const Eigen::MatrixXd& X, int dim, double rho, int nu);
 RcppExport SEXP _stdmatern_matern_mvn_density_cholesky(SEXP XSEXP, SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
@@ -149,11 +146,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_stdmatern_marginal_sd_eigen", (DL_FUNC) &_stdmatern_marginal_sd_eigen, 4},
     {"_stdmatern_make_standardized_matern_eigen", (DL_FUNC) &_stdmatern_make_standardized_matern_eigen, 3},
     {"_stdmatern_matern_mvn_density_eigen", (DL_FUNC) &_stdmatern_matern_mvn_density_eigen, 4},
-    {"_stdmatern_matern_mvn_density_eigen_whitened", (DL_FUNC) &_stdmatern_matern_mvn_density_eigen_whitened, 4},
     {"_stdmatern_sample_standardized_matern", (DL_FUNC) &_stdmatern_sample_standardized_matern, 4},
     {"_stdmatern_make_matern_prec_matrix", (DL_FUNC) &_stdmatern_make_matern_prec_matrix, 3},
     {"_stdmatern_marginal_sd_cholesky", (DL_FUNC) &_stdmatern_marginal_sd_cholesky, 1},
     {"_stdmatern_make_standardized_matern_cholesky", (DL_FUNC) &_stdmatern_make_standardized_matern_cholesky, 3},
+    {"_stdmatern_compute_normalized_cholesky", (DL_FUNC) &_stdmatern_compute_normalized_cholesky, 1},
     {"_stdmatern_matern_mvn_density_cholesky", (DL_FUNC) &_stdmatern_matern_mvn_density_cholesky, 4},
     {NULL, NULL, 0}
 };
