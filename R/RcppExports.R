@@ -13,12 +13,20 @@ make_standardized_matern_eigen <- function(dim, rho, nu) {
     .Call(`_stdmatern_make_standardized_matern_eigen`, dim, rho, nu)
 }
 
-matern_mvn_density_eigen <- function(X, dim, rho, nu) {
-    .Call(`_stdmatern_matern_mvn_density_eigen`, X, dim, rho, nu)
+dmatern_copula_eigen <- function(X, dim, rho, nu) {
+    .Call(`_stdmatern_dmatern_copula_eigen`, X, dim, rho, nu)
 }
 
-sample_standardized_matern <- function(dim, rho, nu, n_samples) {
-    .Call(`_stdmatern_sample_standardized_matern`, dim, rho, nu, n_samples)
+rmatern_copula <- function(n, dim, rho, nu) {
+    .Call(`_stdmatern_rmatern_copula`, n, dim, rho, nu)
+}
+
+dmatern_eigen <- function(X, dim, rho, nu) {
+    .Call(`_stdmatern_dmatern_eigen`, X, dim, rho, nu)
+}
+
+rmatern <- function(n, dim, rho, nu) {
+    .Call(`_stdmatern_rmatern`, n, dim, rho, nu)
 }
 
 make_matern_prec_matrix <- function(dim, rho, nu) {

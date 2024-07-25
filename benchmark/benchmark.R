@@ -4,16 +4,12 @@ library(purrr)
 library(tidyverse)
 library(glue)
 
-x <- sample_standardized_matern(5, 0.5, 0, 1)
-
-matern_mvn_density_cholesky(x, 5, 0.5, 0)
-matern_mvn_density_eigen(x, 5, 0.5, 0)
-
 my_fun <- function(dim) {
-  x <- sample_standardized_matern(dim, 0.5, 0, 1)
+  x_copula <- rmatern_copula(1, dim, 0.5, 0)
+  x <- rmatern(1, dim, 0.5, 0)
   bench::mark(
-    "Cholesky" = matern_mvn_density_cholesky(x, dim, 0.5, 0),
-    "Eigen" = matern_mvn_density_eigen(x, dim, 0.5, 0),
+    "Copula" = dmatern_copula(x, dim, 0.5, 0),
+    "Regular" = dmatern(x, dim, 0.5, 0),
     filter_gc = FALSE,
     iterations = 10,
     check = FALSE
@@ -23,19 +19,30 @@ my_fun <- function(dim) {
     )
 }
 
-my_fun(40)
+my_fun(200)
 
 
-results <- map(c(10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200), my_fun)
+
+results <- map(seq(10, 200, by = 10), my_fun)
 
 results |> 
   list_rbind() |> 
-  select(Q_size = dim, type = expression, time = median, memory = mem_alloc) |> 
+  select(Q_size = dim, Type = expression, time = median, memory = mem_alloc) |> 
   mutate(
     Q_size = glue("{Q_size^2}x{Q_size^2}")
   ) |> 
   select(-memory) |> 
-  pivot_wider(names_from = type, values_from = time) |> 
+  pivot_wider(names_from = Type, values_from = time)
+
+
+
+
+results |> 
+  list_rbind() |> 
+  select(dim, type = expression, time = median, memory = mem_alloc) |> 
   mutate(
-    `Speed-Up` = scales::percent(1 - as.numeric(Eigen / Cholesky))
-  )
+    locations = dim^2,
+    type = as.character(type)
+  ) |> 
+  ggplot(aes(locations, time)) +
+  geom_line(aes(lty = type))
