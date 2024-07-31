@@ -29,7 +29,7 @@ pak::pak("bgautijonsson/stdmatern")
 
 ```{r}
 library(stdmatern)
-Q <- make_standardized_matern(dim = 3, rho = 0.5, nu = 0)
+Q <- make_standardized_matern(dim = 2, rho = 0.5, nu = 0)
 ```
 
 ```{r}
@@ -39,15 +39,6 @@ Q
 ```{r}
 Q |> solve()
 ```
-
-Creating and standardizing a 1600x1600 precision matrix
-
-```{r}
-bench::mark(
-  make_standardized_matern(dim = 40, rho = 0.5, nu = 0)
-)
-```
-
 
 # Sampling spatial data
 
@@ -64,17 +55,17 @@ Here we sample highly dependent spatial data on a 100x100 grid, i.e. there's 10.
 
 ```{r}
 start <- tictoc::tic()
-grid_dim <- 100
-rho <- 0.9
+dim <- c(100, 100)
+rho <- c(0.4, 0.95)
 nu <- 2
-Z <- rmatern_copula(1, grid_dim, rho, nu)
+Z <- rmatern_copula(1, dim, rho, nu)
 
 tibble(
   Z = as.numeric(Z)
 ) |> 
   mutate(
     id = row_number(),
-    lat = (id - 1) %% grid_dim,
+    lat = (id - 1) %% dim[1],
     lon = cumsum(lat == 0),
   ) |> 
   ggplot(aes(lat, lon, fill = Z)) +
@@ -98,11 +89,11 @@ library(tinytable)
 library(tidyr)
 
 my_fun <- function(dim) {
-  x_copula <- rmatern_copula(1, dim, 0.5, 0)
-  x <- rmatern(1, dim, 0.5, 0)
+  x_copula <- rmatern_copula(1, dim, dim, 0.5, 0)
+  x <- rmatern(1, dim, dim, 0.5, 0)
   bench::mark(
-    "Copula" = dmatern_copula(x, dim, 0.5, 0),
-    "Regular" = dmatern(x, dim, 0.5, 0),
+    "Copula" = dmatern_copula_eigen(x, dim, dim, 0.5, 0),
+    "Regular" = dmatern_eigen(x, dim, dim, 0.5, 0),
     filter_gc = FALSE,
     iterations = 10,
     check = FALSE

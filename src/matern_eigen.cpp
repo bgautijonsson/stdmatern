@@ -12,19 +12,24 @@ using namespace Eigen;
 
 
 // [[Rcpp::export]]
-Eigen::VectorXd dmatern_eigen(const Eigen::MatrixXd& X, int dim, double rho, int nu) {
+Eigen::VectorXd dmatern_eigen(const Eigen::MatrixXd& X, int dim_x, int dim_y, double rho1, double rho2, int nu) {
     int n_obs = X.cols();
-    int N = dim * dim;
+    int N = dim_x * dim_y;
     Eigen::VectorXd quadform_sums = Eigen::VectorXd::Zero(n_obs);
     const double C = N * std::log(2 * M_PI);
 
-    // Create precision matrix
-    Eigen::MatrixXd Q1 = make_AR_prec_matrix(dim, rho);
+    // Create precision matrices
+    Eigen::MatrixXd Q1 = make_AR_prec_matrix(dim_x, rho1);
+    Eigen::MatrixXd Q2 = make_AR_prec_matrix(dim_y, rho2);
 
-    // Perform eigendecomposition
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(Q1);
-    Eigen::VectorXd A1 = solver.eigenvalues();
-    Eigen::MatrixXd V1 = solver.eigenvectors();
+    // Perform eigendecompositions
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver1(Q1);
+    Eigen::VectorXd A1 = solver1.eigenvalues();
+    Eigen::MatrixXd V1 = solver1.eigenvectors();
+
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver2(Q2);
+    Eigen::VectorXd A2 = solver2.eigenvalues();
+    Eigen::MatrixXd V2 = solver2.eigenvectors();
 
 
     double log_det = 0;
@@ -34,13 +39,13 @@ Eigen::VectorXd dmatern_eigen(const Eigen::MatrixXd& X, int dim, double rho, int
         Eigen::VectorXd local_quadform_sums = Eigen::VectorXd::Zero(n_obs);
 
         #pragma omp for reduction(+:log_det)
-        for (int i = 0; i < dim; ++i) {
-            for (int j = 0; j < dim; ++j) {
+        for (int i = 0; i < dim_x; ++i) {
+            for (int j = 0; j < dim_y; ++j) {
                 // First calculate the Kronecker product
-                Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(j), V1.col(i));
+                Eigen::VectorXd v = Eigen::kroneckerProduct(V2.col(j), V1.col(i));
                 
                 // Compute the eigenvalue
-                double lambda = (nu == 0) ? (A1(i) + A1(j)) : std::pow(A1(i) + A1(j), nu + 1);
+                double lambda = (nu == 0) ? (A1(i) + A2(j)) : std::pow(A1(i) + A2(j), nu + 1);
 
                 log_det += std::log(lambda);
                 
@@ -64,17 +69,22 @@ Eigen::VectorXd dmatern_eigen(const Eigen::MatrixXd& X, int dim, double rho, int
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd rmatern(int n, int dim, double rho, int nu) {
-    // Step 1: Create 1D AR(1) precision matrix
-    Eigen::SparseMatrix<double> Q1 = make_AR_prec_matrix(dim, rho);
+Eigen::MatrixXd rmatern_eigen(int n, int dim_x, int dim_y, double rho1, double rho2, int nu) {
+    // Step 1: Create 1D AR(1) precision matrices
+    Eigen::SparseMatrix<double> Q1 = make_AR_prec_matrix(dim_x, rho1);
+    Eigen::SparseMatrix<double> Q2 = make_AR_prec_matrix(dim_y, rho2);
     
-    // Step 2: Perform eigendecomposition of Q1
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(Q1);
-    Eigen::VectorXd A1 = solver.eigenvalues();
-    Eigen::MatrixXd V1 = solver.eigenvectors();
+    // Step 2: Perform eigendecomposition of Q1 and Q2
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver1(Q1);
+    Eigen::VectorXd A1 = solver1.eigenvalues();
+    Eigen::MatrixXd V1 = solver1.eigenvectors();
+
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver2(Q2);
+    Eigen::VectorXd A2 = solver2.eigenvalues();
+    Eigen::MatrixXd V2 = solver2.eigenvectors();
 
     // Step 3: Prepare for sampling
-    int D = dim * dim;
+    int D = dim_x * dim_y;
     Eigen::MatrixXd samples(D, n);
 
     // Random number generation
@@ -91,10 +101,10 @@ Eigen::MatrixXd rmatern(int n, int dim, double rho, int nu) {
         int thread_id = omp_get_thread_num();
         Eigen::VectorXd x = Eigen::VectorXd::Zero(D);
 
-        for (int i = 0; i < dim; ++i) {
-            for (int j = 0; j < dim; ++j) {
-                Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(j), V1.col(i));
-                double lambda = std::pow(A1(i) + A1(j), -(nu + 1.0) / 2.0);
+        for (int i = 0; i < dim_x; ++i) {
+            for (int j = 0; j < dim_y; ++j) {
+                Eigen::VectorXd v = Eigen::kroneckerProduct(V2.col(j), V1.col(i));
+                double lambda = std::pow(A1(i) + A2(j), -(nu + 1.0) / 2.0);
                 x += lambda * d(generators[thread_id]) * v;
             }
         }

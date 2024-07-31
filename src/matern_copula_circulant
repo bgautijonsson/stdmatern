@@ -1,0 +1,175 @@
+#include <RcppEigen.h>
+#include <complex>
+#include <unsupported/Eigen/FFT>
+
+// [[Rcpp::depends(RcppEigen)]]
+
+using namespace Rcpp;
+using namespace Eigen;
+
+// Function to create a simple circulant AR(1) precision matrix
+// [[Rcpp::export]]
+Eigen::VectorXd make_simple_circulant_AR(int n, double rho) {
+    Eigen::VectorXd base = Eigen::VectorXd::Zero(n);
+    double scaling = 1.0 / (1.0 - rho * rho);
+    base[0] = (1.0 + rho * rho) * scaling;
+    base[1] = base[n - 1] = -rho * scaling;
+    return base;
+}
+
+// Function to compute eigenvalues of a circulant matrix
+// [[Rcpp::export]]
+Eigen::VectorXcd compute_circulant_eigenvalues(const Eigen::VectorXd& circulant) {
+    Eigen::FFT<double> fft;
+    return fft.fwd(circulant);
+}
+
+// Function to compute marginal standard deviations
+// [[Rcpp::export]]
+Eigen::VectorXd marginal_sd_circulant(const Eigen::MatrixXcd& eig_C) {
+    int n = eig_C.rows();
+    int N = n * n;
+    Eigen::VectorXd marginal_sds = Eigen::VectorXd::Zero(N);
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            marginal_sds(i*n + j) = 1.0 / std::sqrt(eig_C(i, j).real());
+        }
+    }
+    return marginal_sds;
+}
+
+// [[Rcpp::export]]
+Eigen::VectorXd dmatern_copula_circulant(const Eigen::MatrixXd& X, int n, double rho, int nu) {
+    int N = n * n;
+    int n_obs = X.cols();
+    
+    // Step 1: Create simple circulant matrix C1
+    Eigen::VectorXd C1 = make_simple_circulant_AR(n, rho);
+
+    // Step 2: Compute eigenvalues of C1
+    Eigen::VectorXcd eig_C1 = compute_circulant_eigenvalues(C1);
+
+    // Step 3: Compute eigenvalues of C = KroneckerSum(C1, C1)
+    Eigen::MatrixXcd eig_C(n, n);
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            eig_C(i, j) = eig_C1(i) + eig_C1(j);
+        }
+    }
+    if (nu > 0) {
+        eig_C = eig_C.array().pow(nu + 1);
+    }
+
+    // Step 4: Compute marginal standard deviations
+    Eigen::VectorXd marginal_sds = Eigen::VectorXd::Zero(N);
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            marginal_sds(i*n + j) = 1.0 / std::sqrt(eig_C(i, j).real());
+        }
+    }
+
+    // Step 5: Update spectral decomposition
+    eig_C = eig_C.array() * marginal_sds.array().square().matrix().asDiagonal();
+
+    // Step 6: Compute densities
+    Eigen::VectorXd log_densities(n_obs);
+    Eigen::FFT<double> fft;
+
+    for (int obs = 0; obs < n_obs; ++obs) {
+        // Apply 2D FFT
+        Eigen::MatrixXcd X_fft = Eigen::MatrixXcd::Zero(n, n);
+        for (int i = 0; i < n; ++i) {
+            Eigen::VectorXcd row_fft = fft.fwd(X.col(obs).segment(i*n, n));
+            X_fft.row(i) = row_fft.transpose();
+        }
+        for (int j = 0; j < n; ++j) {
+            Eigen::VectorXcd col_fft = fft.fwd(X_fft.col(j));
+            X_fft.col(j) = col_fft;
+        }
+        
+        // Compute quadratic form and log determinant
+        double quad_form = 0;
+        double log_det = 0;
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < n; ++j) {
+                quad_form += std::norm(X_fft(i, j)) * eig_C(i, j).real();
+                log_det += std::log(eig_C(i, j).real());
+            }
+        }
+        
+        // Compute log density
+        log_densities(obs) = -0.5 * (N * std::log(2 * M_PI) + log_det + quad_form);
+    }
+
+    return log_densities;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd rmatern_copula_circulant(int n_samples, int n, double rho, int nu) {
+    int N = n * n;
+    
+    // Step 1: Create simple circulant matrix C1
+    Eigen::VectorXd C1 = make_simple_circulant_AR(n, rho);
+
+    // Step 2: Compute eigenvalues of C1
+    Eigen::VectorXcd eig_C1 = compute_circulant_eigenvalues(C1);
+
+    // Step 3: Compute eigenvalues of C = KroneckerSum(C1, C1)
+    Eigen::MatrixXcd eig_C(n, n);
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            eig_C(i, j) = eig_C1(i) + eig_C1(j);
+        }
+    }
+    if (nu > 0) {
+        eig_C = eig_C.array().pow(nu + 1);
+    }
+
+    // Step 4: Compute marginal standard deviations
+    Eigen::VectorXd marginal_sds = Eigen::VectorXd::Zero(N);
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            marginal_sds(i*n + j) = 1.0 / std::sqrt(eig_C(i, j).real());
+        }
+    }
+
+    // Step 5: Update spectral decomposition
+    eig_C = eig_C.array().sqrt();
+
+    // Step 6: Generate samples
+    Eigen::MatrixXd samples(N, n_samples);
+    Eigen::FFT<double> fft;
+
+    for (int s = 0; s < n_samples; ++s) {
+        Eigen::MatrixXcd Z(n, n);
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < n; ++j) {
+                double re = R::rnorm(0, 1);
+                double im = R::rnorm(0, 1);
+                Z(i, j) = std::complex<double>(re, im);
+            }
+        }
+
+        // Apply spectral decomposition
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < n; ++j) {
+                Z(i, j) *= std::sqrt(eig_C(i, j).real()) * marginal_sds(i*n + j);
+            }
+        }
+
+        // Apply inverse 2D FFT
+        Eigen::MatrixXd X(n, n);
+        for (int i = 0; i < n; ++i) {
+            Eigen::VectorXcd row_ifft = fft.inv(Z.row(i));
+            X.row(i) = row_ifft.real();
+        }
+        for (int j = 0; j < n; ++j) {
+            Eigen::VectorXcd col_ifft = fft.inv(X.col(j));
+            X.col(j) = col_ifft.real();
+        }
+
+        samples.col(s) = Eigen::Map<Eigen::VectorXd>(X.data(), N);
+    }
+
+    return samples;
+}

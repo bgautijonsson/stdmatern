@@ -5,28 +5,36 @@ make_AR_prec_matrix <- function(dim, rho) {
     .Call(`_stdmatern_make_AR_prec_matrix`, dim, rho)
 }
 
-marginal_sd_eigen <- function(A1, V1, dim, nu) {
-    .Call(`_stdmatern_marginal_sd_eigen`, A1, V1, dim, nu)
+marginal_sd_eigen <- function(A1, V1, dim_x, A2, V2, dim_y, nu) {
+    .Call(`_stdmatern_marginal_sd_eigen`, A1, V1, dim_x, A2, V2, dim_y, nu)
 }
 
-make_standardized_matern_eigen <- function(dim, rho, nu) {
-    .Call(`_stdmatern_make_standardized_matern_eigen`, dim, rho, nu)
+make_standardized_matern_eigen <- function(dim_x, dim_y, rho1, rho2, nu) {
+    .Call(`_stdmatern_make_standardized_matern_eigen`, dim_x, dim_y, rho1, rho2, nu)
 }
 
-dmatern_copula_eigen <- function(X, dim, rho, nu) {
-    .Call(`_stdmatern_dmatern_copula_eigen`, X, dim, rho, nu)
+dmatern_copula_eigen <- function(X, dim_x, dim_y, rho1, rho2, nu) {
+    .Call(`_stdmatern_dmatern_copula_eigen`, X, dim_x, dim_y, rho1, rho2, nu)
 }
 
-rmatern_copula <- function(n, dim, rho, nu) {
-    .Call(`_stdmatern_rmatern_copula`, n, dim, rho, nu)
+rmatern_copula_eigen <- function(n, dim_x, dim_y, rho1, rho2, nu) {
+    .Call(`_stdmatern_rmatern_copula_eigen`, n, dim_x, dim_y, rho1, rho2, nu)
 }
 
-dmatern_eigen <- function(X, dim, rho, nu) {
-    .Call(`_stdmatern_dmatern_eigen`, X, dim, rho, nu)
+dmatern_copula_folded <- function(X, n, rho, nu) {
+    .Call(`_stdmatern_dmatern_copula_folded`, X, n, rho, nu)
 }
 
-rmatern <- function(n, dim, rho, nu) {
-    .Call(`_stdmatern_rmatern`, n, dim, rho, nu)
+rmatern_copula_folded <- function(n_samples, n, rho, nu) {
+    .Call(`_stdmatern_rmatern_copula_folded`, n_samples, n, rho, nu)
+}
+
+dmatern_eigen <- function(X, dim_x, dim_y, rho1, rho2, nu) {
+    .Call(`_stdmatern_dmatern_eigen`, X, dim_x, dim_y, rho1, rho2, nu)
+}
+
+rmatern_eigen <- function(n, dim_x, dim_y, rho1, rho2, nu) {
+    .Call(`_stdmatern_rmatern_eigen`, n, dim_x, dim_y, rho1, rho2, nu)
 }
 
 make_matern_prec_matrix <- function(dim, rho, nu) {

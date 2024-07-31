@@ -46,3 +46,4 @@ results |>
   ) |> 
   ggplot(aes(locations, time)) +
   geom_line(aes(lty = type))
+
