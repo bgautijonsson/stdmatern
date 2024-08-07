@@ -1,5 +1,6 @@
 #include <RcppEigen.h>
 #include <complex>
+#include <random>
 #include <fftw3.h>
 
 // [[Rcpp::depends(RcppEigen, fftwtools)]]
@@ -149,4 +150,62 @@ Eigen::VectorXd dmatern_copula_circulant(const Eigen::MatrixXd& X, int dim, doub
     return log_densities;
 }
 
+// [[Rcpp::export]]
+Eigen::VectorXd fold_data(const Eigen::VectorXd& X, int n) {
+    Eigen::VectorXd folded(4 * n * n);
+    Eigen::Map<const Eigen::MatrixXd> X_mat(X.data(), n, n);
+    
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            // First quarter
+            folded[i * 2*n + j] = X_mat(i, j);
+            
+            // Second quarter
+            folded[i * 2*n + (2*n - 1 - j)] = X_mat(i, j);
+            
+            // Third quarter
+            folded[(2*n - 1 - i) * 2*n + j] = X_mat(i, j);
+            
+            // Fourth quarter
+            folded[(2*n - 1 - i) * 2*n + (2*n - 1 - j)] = X_mat(i, j);
+        }
+    }
+    
+    return folded;
+}
 
+// [[Rcpp::export]]
+Eigen::VectorXd dmatern_copula_folded(const Eigen::MatrixXd& X, int dim, double rho, int nu) {
+    int n = dim;  // original dimension
+    int N = 4 * n * n;  // folded dimension
+    int n_obs = X.cols();
+    Eigen::VectorXd quad_forms(n_obs);
+    
+    // Create base matrix (unchanged)
+    Eigen::MatrixXd c = create_base_matrix(2 * n, rho);
+    c /= 2.0;
+    
+    // Compute eigenvalues (unchanged)
+    Eigen::MatrixXcd eigs = compute_and_rescale_eigenvalues(c, nu);
+    
+    // Compute log determinant (unchanged)
+    double log_det = eigs.real().array().log().sum();
+    
+    // Compute quadratic form x^T Q x for each observation
+    for (int i = 0; i < n_obs; ++i) {
+        // Fold the data
+        Eigen::VectorXd folded_X = fold_data(X.col(i), n);
+        
+        // Compute Qx using the folded data
+        Eigen::VectorXd Qx = matrix_vector_product(eigs, folded_X);
+        
+        // Compute quadratic form
+        quad_forms(i) = folded_X.dot(Qx);
+    }
+    
+    // Compute log density
+    // Note: We use N/4 instead of N because we're using the folded dimension
+    Eigen::VectorXd log_densities = -0.5 * (N/4 * std::log(2 * M_PI) - log_det + quad_forms.array());
+    
+    return log_densities;
+}

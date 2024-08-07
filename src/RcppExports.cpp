@@ -73,6 +73,32 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fold_data
+Eigen::VectorXd fold_data(const Eigen::VectorXd& X, int n);
+RcppExport SEXP _stdmatern_fold_data(SEXP XSEXP, SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(fold_data(X, n));
+    return rcpp_result_gen;
+END_RCPP
+}
+// dmatern_copula_folded
+Eigen::VectorXd dmatern_copula_folded(const Eigen::MatrixXd& X, int dim, double rho, int nu);
+RcppExport SEXP _stdmatern_dmatern_copula_folded(SEXP XSEXP, SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(dmatern_copula_folded(X, dim, rho, nu));
+    return rcpp_result_gen;
+END_RCPP
+}
 // marginal_sd_eigen
 Eigen::VectorXd marginal_sd_eigen(const Eigen::VectorXd& A1, const Eigen::MatrixXd& V1, int dim_x, const Eigen::VectorXd& A2, const Eigen::MatrixXd& V2, int dim_y, int nu);
 RcppExport SEXP _stdmatern_marginal_sd_eigen(SEXP A1SEXP, SEXP V1SEXP, SEXP dim_xSEXP, SEXP A2SEXP, SEXP V2SEXP, SEXP dim_ySEXP, SEXP nuSEXP) {
@@ -134,34 +160,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type rho2(rho2SEXP);
     Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
     rcpp_result_gen = Rcpp::wrap(rmatern_copula_eigen(n, dim_x, dim_y, rho1, rho2, nu));
-    return rcpp_result_gen;
-END_RCPP
-}
-// dmatern_copula_folded
-List dmatern_copula_folded(const Eigen::MatrixXd& X, int n, double rho, int nu);
-RcppExport SEXP _stdmatern_dmatern_copula_folded(SEXP XSEXP, SEXP nSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
-    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
-    rcpp_result_gen = Rcpp::wrap(dmatern_copula_folded(X, n, rho, nu));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rmatern_copula_folded
-Eigen::MatrixXd rmatern_copula_folded(int n_samples, int n, double rho, int nu);
-RcppExport SEXP _stdmatern_rmatern_copula_folded(SEXP n_samplesSEXP, SEXP nSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type n_samples(n_samplesSEXP);
-    Rcpp::traits::input_parameter< int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
-    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
-    rcpp_result_gen = Rcpp::wrap(rmatern_copula_folded(n_samples, n, rho, nu));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -266,12 +264,12 @@ static const R_CallMethodDef CallEntries[] = {
     {"_stdmatern_compute_and_rescale_eigenvalues", (DL_FUNC) &_stdmatern_compute_and_rescale_eigenvalues, 2},
     {"_stdmatern_matrix_vector_product", (DL_FUNC) &_stdmatern_matrix_vector_product, 2},
     {"_stdmatern_dmatern_copula_circulant", (DL_FUNC) &_stdmatern_dmatern_copula_circulant, 4},
+    {"_stdmatern_fold_data", (DL_FUNC) &_stdmatern_fold_data, 2},
+    {"_stdmatern_dmatern_copula_folded", (DL_FUNC) &_stdmatern_dmatern_copula_folded, 4},
     {"_stdmatern_marginal_sd_eigen", (DL_FUNC) &_stdmatern_marginal_sd_eigen, 7},
     {"_stdmatern_make_standardized_matern_eigen", (DL_FUNC) &_stdmatern_make_standardized_matern_eigen, 5},
     {"_stdmatern_dmatern_copula_eigen", (DL_FUNC) &_stdmatern_dmatern_copula_eigen, 6},
     {"_stdmatern_rmatern_copula_eigen", (DL_FUNC) &_stdmatern_rmatern_copula_eigen, 6},
-    {"_stdmatern_dmatern_copula_folded", (DL_FUNC) &_stdmatern_dmatern_copula_folded, 4},
-    {"_stdmatern_rmatern_copula_folded", (DL_FUNC) &_stdmatern_rmatern_copula_folded, 4},
     {"_stdmatern_dmatern_eigen", (DL_FUNC) &_stdmatern_dmatern_eigen, 6},
     {"_stdmatern_rmatern_eigen", (DL_FUNC) &_stdmatern_rmatern_eigen, 6},
     {"_stdmatern_make_matern_prec_matrix", (DL_FUNC) &_stdmatern_make_matern_prec_matrix, 3},

@@ -21,6 +21,14 @@ dmatern_copula_circulant <- function(X, dim, rho, nu) {
     .Call(`_stdmatern_dmatern_copula_circulant`, X, dim, rho, nu)
 }
 
+fold_data <- function(X, n) {
+    .Call(`_stdmatern_fold_data`, X, n)
+}
+
+dmatern_copula_folded <- function(X, dim, rho, nu) {
+    .Call(`_stdmatern_dmatern_copula_folded`, X, dim, rho, nu)
+}
+
 marginal_sd_eigen <- function(A1, V1, dim_x, A2, V2, dim_y, nu) {
     .Call(`_stdmatern_marginal_sd_eigen`, A1, V1, dim_x, A2, V2, dim_y, nu)
 }
@@ -35,14 +43,6 @@ dmatern_copula_eigen <- function(X, dim_x, dim_y, rho1, rho2, nu) {
 
 rmatern_copula_eigen <- function(n, dim_x, dim_y, rho1, rho2, nu) {
     .Call(`_stdmatern_rmatern_copula_eigen`, n, dim_x, dim_y, rho1, rho2, nu)
-}
-
-dmatern_copula_folded <- function(X, n, rho, nu) {
-    .Call(`_stdmatern_dmatern_copula_folded`, X, n, rho, nu)
-}
-
-rmatern_copula_folded <- function(n_samples, n, rho, nu) {
-    .Call(`_stdmatern_rmatern_copula_folded`, n_samples, n, rho, nu)
 }
 
 dmatern_eigen <- function(X, dim_x, dim_y, rho1, rho2, nu) {
