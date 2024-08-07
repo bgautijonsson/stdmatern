@@ -23,6 +23,56 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// create_base_matrix
+Eigen::MatrixXd create_base_matrix(int dim, double rho);
+RcppExport SEXP _stdmatern_create_base_matrix(SEXP dimSEXP, SEXP rhoSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    rcpp_result_gen = Rcpp::wrap(create_base_matrix(dim, rho));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_and_rescale_eigenvalues
+Eigen::MatrixXcd compute_and_rescale_eigenvalues(const Eigen::MatrixXd& c, int nu);
+RcppExport SEXP _stdmatern_compute_and_rescale_eigenvalues(SEXP cSEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type c(cSEXP);
+    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_and_rescale_eigenvalues(c, nu));
+    return rcpp_result_gen;
+END_RCPP
+}
+// matrix_vector_product
+Eigen::VectorXd matrix_vector_product(const Eigen::MatrixXcd& eigenvalues, const Eigen::VectorXd& v);
+RcppExport SEXP _stdmatern_matrix_vector_product(SEXP eigenvaluesSEXP, SEXP vSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXcd& >::type eigenvalues(eigenvaluesSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type v(vSEXP);
+    rcpp_result_gen = Rcpp::wrap(matrix_vector_product(eigenvalues, v));
+    return rcpp_result_gen;
+END_RCPP
+}
+// dmatern_copula_circulant
+Eigen::VectorXd dmatern_copula_circulant(const Eigen::MatrixXd& X, int dim, double rho, int nu);
+RcppExport SEXP _stdmatern_dmatern_copula_circulant(SEXP XSEXP, SEXP dimSEXP, SEXP rhoSEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(dmatern_copula_circulant(X, dim, rho, nu));
+    return rcpp_result_gen;
+END_RCPP
+}
 // marginal_sd_eigen
 Eigen::VectorXd marginal_sd_eigen(const Eigen::VectorXd& A1, const Eigen::MatrixXd& V1, int dim_x, const Eigen::VectorXd& A2, const Eigen::MatrixXd& V2, int dim_y, int nu);
 RcppExport SEXP _stdmatern_marginal_sd_eigen(SEXP A1SEXP, SEXP V1SEXP, SEXP dim_xSEXP, SEXP A2SEXP, SEXP V2SEXP, SEXP dim_ySEXP, SEXP nuSEXP) {
@@ -212,6 +262,10 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_stdmatern_make_AR_prec_matrix", (DL_FUNC) &_stdmatern_make_AR_prec_matrix, 2},
+    {"_stdmatern_create_base_matrix", (DL_FUNC) &_stdmatern_create_base_matrix, 2},
+    {"_stdmatern_compute_and_rescale_eigenvalues", (DL_FUNC) &_stdmatern_compute_and_rescale_eigenvalues, 2},
+    {"_stdmatern_matrix_vector_product", (DL_FUNC) &_stdmatern_matrix_vector_product, 2},
+    {"_stdmatern_dmatern_copula_circulant", (DL_FUNC) &_stdmatern_dmatern_copula_circulant, 4},
     {"_stdmatern_marginal_sd_eigen", (DL_FUNC) &_stdmatern_marginal_sd_eigen, 7},
     {"_stdmatern_make_standardized_matern_eigen", (DL_FUNC) &_stdmatern_make_standardized_matern_eigen, 5},
     {"_stdmatern_dmatern_copula_eigen", (DL_FUNC) &_stdmatern_dmatern_copula_eigen, 6},

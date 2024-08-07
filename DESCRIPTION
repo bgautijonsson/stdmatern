@@ -11,6 +11,5 @@ Imports: Rcpp, RcppEigen
 Depends: Matrix
 LinkingTo: 
     Rcpp,
-    RcppEigen,
-    BH
+    RcppEigen
 RoxygenNote: 7.3.1

@@ -5,6 +5,22 @@ make_AR_prec_matrix <- function(dim, rho) {
     .Call(`_stdmatern_make_AR_prec_matrix`, dim, rho)
 }
 
+create_base_matrix <- function(dim, rho) {
+    .Call(`_stdmatern_create_base_matrix`, dim, rho)
+}
+
+compute_and_rescale_eigenvalues <- function(c, nu) {
+    .Call(`_stdmatern_compute_and_rescale_eigenvalues`, c, nu)
+}
+
+matrix_vector_product <- function(eigenvalues, v) {
+    .Call(`_stdmatern_matrix_vector_product`, eigenvalues, v)
+}
+
+dmatern_copula_circulant <- function(X, dim, rho, nu) {
+    .Call(`_stdmatern_dmatern_copula_circulant`, X, dim, rho, nu)
+}
+
 marginal_sd_eigen <- function(A1, V1, dim_x, A2, V2, dim_y, nu) {
     .Call(`_stdmatern_marginal_sd_eigen`, A1, V1, dim_x, A2, V2, dim_y, nu)
 }
