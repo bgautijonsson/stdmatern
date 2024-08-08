@@ -30,6 +30,8 @@ base_Q <- matrix(
 base_Q[1, ] <- base_Q1 + c(1 + rho^2, rep(0, dim - 1)) 
 base_Q[c(2, dim), 1] <- -rho
 
+fft(base_Q)
+
 mean(abs(sort(Re(fft(base_Q)), decreasing = TRUE) - eigen(Q)$values))
 
 Q_inv <- solve(Q)
@@ -45,11 +47,14 @@ Re(fft(1 / fft(base_Q), inverse = TRUE) / dim^2)
 
 mean(abs(temp - Re(fft(1 / fft(base_Q), inverse = TRUE) / dim^2)))
 
-base_Q |> mvfft() |> t() |> mvfft() |> as.numeric() |> sort(decreasing = TRUE)
-eigen(Q)$values
+base_C <- base_Q
+
+eigenvalues <- fft(base_C)
+
+base_C_inverse <- fft(1 / eigenvalues, inverse = TRUE) / dim^2
+
+mvar <- base_C_inverse[1, 1]
+
+updated_eigenvalues <- mvar * eigenvalues
 
 
-bench::mark(
-  "mvfft" = base_Q |> mvfft() |> t() |> mvfft() |> as.numeric() |> sort(decreasing = TRUE),
-  "fft" = sort(Re(fft(base_Q)), decreasing = TRUE)
-)
