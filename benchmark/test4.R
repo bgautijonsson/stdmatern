@@ -2,9 +2,9 @@ library(stdmatern)
 library(tidyverse)
 library(purrr)
 library(scales)
-n <- 10
+n <- 100
 dim <- 10
-rho <- 0.5
+rho <- 0.9
 nu <- 0
 
 test_fun <- function(iter) {

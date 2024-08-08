@@ -8,7 +8,7 @@
 using namespace Rcpp;
 using namespace Eigen;
 
-Eigen::MatrixXcd fft2(const Eigen::MatrixXcd& input) {
+Eigen::MatrixXcd fft2(const Eigen::MatrixXcd& input, double scale) {
     int dim = input.rows();
     Eigen::MatrixXcd output(dim, dim);
 
@@ -29,7 +29,6 @@ Eigen::MatrixXcd fft2(const Eigen::MatrixXcd& input) {
     fftw_execute(plan);
 
     // Copy result back to Eigen matrix and scale by 1/(dim*dim)
-    double scale = 1.0 / (dim * dim);
     for (int i = 0; i < dim; ++i) {
         for (int j = 0; j < dim; ++j) {
             output(i, j) = std::complex<double>(out[i*dim + j][0], out[i*dim + j][1]) * scale;
@@ -183,7 +182,7 @@ Eigen::VectorXd dmatern_copula_circulant(const Eigen::MatrixXd& X, int dim, doub
     Eigen::VectorXd x_squared = X.colwise().squaredNorm();
 
     // Compute log density
-    Eigen::VectorXd log_densities = -0.5 * (quad_forms.array() - log_det + x_squared.array());
+    Eigen::VectorXd log_densities = -0.5 * (quad_forms.array() - log_det - x_squared.array());
     
     return log_densities;
 }
@@ -193,15 +192,16 @@ Eigen::MatrixXd rmatern_copula_circulant(int n_samples, int dim, double rho, int
     Eigen::MatrixXd samples(dim * dim, n_samples);
 
      // Step 1: Compute the (real) eigenvalues, Λ = √(nN) DFT2(θ)
-        Eigen::MatrixXd c = create_base_matrix(dim, rho);
-        Eigen::MatrixXcd eigs = compute_and_rescale_eigenvalues(c, nu);
-        Eigen::MatrixXcd lambda_sqrt = eigs.array().sqrt().inverse();
-    
+    Eigen::MatrixXd c = create_base_matrix(dim, rho);
+    Eigen::MatrixXcd eigs = compute_and_rescale_eigenvalues(c, nu);
+    Eigen::MatrixXcd lambda_sqrt = eigs.array().sqrt().inverse();
+
     // Step 1: Sample z, where Re(z_ij) ~ N(0,1) and Im(z_ij) ~ N(0,1) iid
     std::random_device rd;
     std::mt19937 gen(rd());
     std::normal_distribution<> d(0, 1);
     Eigen::MatrixXcd z(dim, dim);
+    double scale = 1.0 / (dim);
     
     for(int s = 0; s < n_samples; ++s) {
 
@@ -211,7 +211,7 @@ Eigen::MatrixXd rmatern_copula_circulant(int n_samples, int dim, double rho, int
             }
         }
         
-        Eigen::MatrixXcd v = fft2(lambda_sqrt.cwiseProduct(z));
+        Eigen::MatrixXcd v = fft2(lambda_sqrt.cwiseProduct(z), scale);
         
         // Step 4: x = Re(v)
         samples.col(s) = v.real().transpose().reshaped(v.size(), 1);
@@ -273,15 +273,54 @@ Eigen::VectorXd dmatern_copula_folded(const Eigen::MatrixXd& X, int dim, double 
         Eigen::VectorXd Qx = matrix_vector_product(eigs, folded_X);
         
         // Compute quadratic form
-        quad_forms(i) = folded_X.dot(Qx);
+        quad_forms(i) = folded_X.dot(Qx) - folded_X.squaredNorm();
     }
 
-    // Subtract x'Ix (sum of squared elements for each observation)
-    Eigen::VectorXd x_squared = X.colwise().squaredNorm();
     
     // Compute log density
-    // Note: We use N/4 instead of N because we're using the folded dimension
-    Eigen::VectorXd log_densities = -0.5 * (quad_forms.array() - log_det + x_squared.array());
+    Eigen::VectorXd log_densities = -0.5 * (quad_forms.array() - log_det);
     
     return log_densities;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd rmatern_copula_folded_full(int n_samples, int dim, double rho, int nu) {
+    int n = dim;  // original dimension
+    int N = 2 * n;  // folded dimension
+    Eigen::MatrixXd samples(n * n, n_samples);
+
+    // Create base matrix for 2n x 2n grid
+    Eigen::MatrixXd c = create_base_matrix(N, rho);
+    c /= 2.0;  // Divide by 2 as in dmatern_copula_folded
+
+    // Compute eigenvalues
+    Eigen::MatrixXcd eigs = compute_and_rescale_eigenvalues(c, nu);
+    Eigen::MatrixXcd lambda_sqrt = eigs.array().sqrt().inverse();
+
+    // Set up random number generation
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::normal_distribution<> d(0, 1);
+    double scale = 1.0 / (2 * dim);
+
+    for(int s = 0; s < n_samples; ++s) {
+        // Generate complex normal random field z of size 2n x 2n
+        Eigen::MatrixXcd z(N, N);
+        for(int i = 0; i < N; ++i) {
+            for(int j = 0; j < N; ++j) {
+                z(i, j) = std::complex<double>(d(gen), d(gen));
+            }
+        }
+
+        // Perform FFT, multiply by sqrt(inv(eigenvalues)), and inverse FFT
+        Eigen::MatrixXcd v = fft2(lambda_sqrt.cwiseProduct(z), scale);
+
+        // Extract the n x n subset corresponding to the original data
+        Eigen::MatrixXd sample = v.topLeftCorner(n, n).real();
+
+        // Store the sample
+        samples.col(s) = Eigen::Map<Eigen::VectorXd>(sample.data(), n * n);
+    }
+
+    return samples;
 }
