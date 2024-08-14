@@ -25,16 +25,8 @@ rmatern_copula_circulant <- function(n_samples, dim, rho, nu) {
     .Call(`_stdmatern_rmatern_copula_circulant`, n_samples, dim, rho, nu)
 }
 
-fold_data <- function(X, n) {
-    .Call(`_stdmatern_fold_data`, X, n)
-}
-
-dmatern_copula_folded <- function(X, dim, rho, nu) {
-    .Call(`_stdmatern_dmatern_copula_folded`, X, dim, rho, nu)
-}
-
-rmatern_copula_folded_full <- function(n_samples, dim, rho, nu) {
-    .Call(`_stdmatern_rmatern_copula_folded_full`, n_samples, dim, rho, nu)
+construct_circulant_precision <- function(dim, rho, nu) {
+    .Call(`_stdmatern_construct_circulant_precision`, dim, rho, nu)
 }
 
 marginal_sd_eigen <- function(A1, V1, dim_x, A2, V2, dim_y, nu) {
@@ -53,20 +45,16 @@ rmatern_copula_eigen <- function(n, dim_x, dim_y, rho1, rho2, nu) {
     .Call(`_stdmatern_rmatern_copula_eigen`, n, dim_x, dim_y, rho1, rho2, nu)
 }
 
-create_base_matrix_dct <- function(dim, rho) {
-    .Call(`_stdmatern_create_base_matrix_dct`, dim, rho)
+fold_data <- function(X, n) {
+    .Call(`_stdmatern_fold_data`, X, n)
 }
 
-compute_and_rescale_eigenvalues_dct <- function(c, nu) {
-    .Call(`_stdmatern_compute_and_rescale_eigenvalues_dct`, c, nu)
+dmatern_copula_folded <- function(X, dim, rho, nu) {
+    .Call(`_stdmatern_dmatern_copula_folded`, X, dim, rho, nu)
 }
 
-matrix_vector_product_dct <- function(eigenvalues, v) {
-    .Call(`_stdmatern_matrix_vector_product_dct`, eigenvalues, v)
-}
-
-dmatern_copula_dct <- function(X, dim, rho, nu) {
-    .Call(`_stdmatern_dmatern_copula_dct`, X, dim, rho, nu)
+rmatern_copula_folded_full <- function(n_samples, dim, rho, nu) {
+    .Call(`_stdmatern_rmatern_copula_folded_full`, n_samples, dim, rho, nu)
 }
 
 dmatern_eigen <- function(X, dim_x, dim_y, rho1, rho2, nu) {

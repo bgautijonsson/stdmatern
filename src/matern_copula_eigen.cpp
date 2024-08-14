@@ -19,7 +19,7 @@ Eigen::VectorXd marginal_sd_eigen(const Eigen::VectorXd& A1, const Eigen::Matrix
     for (int i = 0; i < dim_x; ++i) {
         for (int j = 0; j < dim_y; ++j) {
             Eigen::VectorXd v = Eigen::kroneckerProduct(V2.col(j), V1.col(i));
-            double lambda = (nu == 0) ? (A1(i) + A2(j)) : std::pow(A1(i) + A2(j), nu + 1);
+            double lambda = std::pow(A1(i) + A2(j), nu + 1);
             marginal_sds += (v.array().square() / lambda).matrix();
         }
     }

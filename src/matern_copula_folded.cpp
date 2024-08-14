@@ -2,136 +2,110 @@
 #include <complex>
 #include <random>
 #include <fftw3.h>
+#include "circulant_utils.h"
 
-// [[Rcpp::depends(RcppEigen, fftwtools)]]
+// [[Rcpp::depends(RcppEigen)]]
 
 using namespace Rcpp;
 using namespace Eigen;
 
-#include <fftw3.h>
-
-// Function to create the base matrix c for DCT
 // [[Rcpp::export]]
-Eigen::MatrixXd create_base_matrix_dct(int dim, double rho) {
-    Eigen::MatrixXd c = Eigen::MatrixXd::Zero(dim, dim);
+Eigen::VectorXd fold_data(const Eigen::VectorXd& X, int n) {
+    Eigen::VectorXd folded(4 * n * n);
+    Eigen::Map<const Eigen::MatrixXd> X_mat(X.data(), n, n);
     
-    // Set the first row
-    c(0, 0) = 2 + 2 * rho * rho;
-    c(0, 1) = -2 * rho;
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            // First quarter
+            folded[i * 2*n + j] = X_mat(i, j);
+            
+            // Second quarter
+            folded[i * 2*n + (2*n - 1 - j)] = X_mat(i, j);
+            
+            // Third quarter
+            folded[(2*n - 1 - i) * 2*n + j] = X_mat(i, j);
+            
+            // Fourth quarter
+            folded[(2*n - 1 - i) * 2*n + (2*n - 1 - j)] = X_mat(i, j);
+        }
+    }
     
-    // Set the second row
-    c(1, 0) = -rho;
-    
-    return c;
+    return folded;
 }
 
-// Function to compute DCT of c, apply nu, and rescale eigenvalues
 // [[Rcpp::export]]
-Eigen::MatrixXd compute_and_rescale_eigenvalues_dct(const Eigen::MatrixXd& c, int nu) {
-    int dim = c.rows();
-
-    double *in = (double*) fftw_malloc(sizeof(double) * dim * dim);
-    double *out = (double*) fftw_malloc(sizeof(double) * dim * dim);
-
-    // Copy data from Eigen matrix to FFTW input
-    for (int i = 0; i < dim * dim; ++i) {
-        in[i] = c(i / dim, i % dim);
-    }
-
-    // Forward DCT
-    fftw_plan plan_forward = fftw_plan_r2r_2d(dim, dim, in, out, FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
-    fftw_execute(plan_forward);
-
-    // Copy eigenvalues to Eigen matrix and apply nu
-    Eigen::MatrixXd eigenvalues(dim, dim);
-    for (int i = 0; i < dim * dim; ++i) {
-        eigenvalues(i / dim, i % dim) = std::pow(out[i], nu + 1);
-    }
-
-    // Compute inverse of eigenvalues
-    Eigen::MatrixXd inv_eigenvalues = eigenvalues.cwiseInverse();
-
-    // Inverse DCT of inverse eigenvalues
-    fftw_plan plan_backward = fftw_plan_r2r_2d(dim, dim, inv_eigenvalues.data(), in, FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
-    fftw_execute(plan_backward);
-
-    // Get marginal variance (first element of inverse DCT result)
-    double mvar = in[0] / (4 * dim * dim);
-
-    // Scale eigenvalues
-    Eigen::MatrixXd updated_eigenvalues = mvar * eigenvalues;
-
-    fftw_destroy_plan(plan_forward);
-    fftw_destroy_plan(plan_backward);
-    fftw_free(in);
-    fftw_free(out);
-
-    return updated_eigenvalues;
-}
-
-// Function for matrix-vector product using DCT and eigenvalues
-// [[Rcpp::export]]
-Eigen::VectorXd matrix_vector_product_dct(const Eigen::MatrixXd& eigenvalues, const Eigen::VectorXd& v) {
-    int dim = eigenvalues.rows();
-
-    double *in = (double*) fftw_malloc(sizeof(double) * dim * dim);
-    double *out = (double*) fftw_malloc(sizeof(double) * dim * dim);
-
-    // Copy data from Eigen vector to FFTW input
-    for (int i = 0; i < dim * dim; ++i) {
-        in[i] = v(i);
-    }
-
-    // Forward DCT
-    fftw_plan plan_forward = fftw_plan_r2r_2d(dim, dim, in, out, FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
-    fftw_execute(plan_forward);
-
-    // Multiply with eigenvalues in frequency domain
-    for (int i = 0; i < dim * dim; ++i) {
-        out[i] *= eigenvalues(i / dim, i % dim);
-    }
-
-    // Inverse DCT
-    fftw_plan plan_backward = fftw_plan_r2r_2d(dim, dim, out, in, FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
-    fftw_execute(plan_backward);
-
-    // Copy result back to Eigen vector and normalize
-    Eigen::VectorXd result(dim * dim);
-    for (int i = 0; i < dim * dim; ++i) {
-        result(i) = in[i] / (4 * dim * dim);
-    }
-
-    fftw_destroy_plan(plan_forward);
-    fftw_destroy_plan(plan_backward);
-    fftw_free(in);
-    fftw_free(out);
-
-    return result;
-}
-
-// Function for log-density calculation using DCT
-// [[Rcpp::export]]
-Eigen::VectorXd dmatern_copula_dct(const Eigen::MatrixXd& X, int dim, double rho, int nu) {
-    Eigen::MatrixXd c = create_base_matrix_dct(dim, rho);
-    Eigen::MatrixXd eigs = compute_and_rescale_eigenvalues_dct(c, nu);
-    int N = dim * dim;
+Eigen::VectorXd dmatern_copula_folded(const Eigen::MatrixXd& X, int dim, double rho, int nu) {
+    int n = dim;  // original dimension
+    int N = 4 * n * n;  // folded dimension
     int n_obs = X.cols();
     Eigen::VectorXd quad_forms(n_obs);
     
-    // Compute log determinant
-    double log_det = eigs.array().log().sum();
+    // Create base matrix (unchanged)
+    Eigen::MatrixXd c = create_base_matrix(2 * n, rho);
+    c /= 2.0;
     
-    // Compute quadratic form x^T Q x
+    // Compute eigenvalues (unchanged)
+    Eigen::MatrixXcd eigs = compute_and_rescale_eigenvalues(c, nu);
+    
+    // Compute log determinant (unchanged)
+    double log_det = eigs.real().array().log().sum();
+    
+    // Compute quadratic form x^T Q x for each observation
     for (int i = 0; i < n_obs; ++i) {
-        Eigen::VectorXd Qx = matrix_vector_product_dct(eigs, X.col(i));
-        quad_forms(i) = X.col(i).dot(Qx);
+        // Fold the data
+        Eigen::VectorXd folded_X = fold_data(X.col(i), n);
+        
+        // Compute Qx using the folded data
+        Eigen::VectorXd Qx = matrix_vector_product(eigs, folded_X);
+        
+        // Compute quadratic form
+        quad_forms(i) = (folded_X.dot(Qx) - folded_X.squaredNorm());
     }
     
-    // Subtract x'Ix (sum of squared elements for each observation)
-    Eigen::VectorXd x_squared = X.colwise().squaredNorm();
-
     // Compute log density
-    Eigen::VectorXd log_densities = -0.5 * (quad_forms.array() - log_det + x_squared.array());
+    Eigen::VectorXd log_densities = -0.5 * (quad_forms.array() - log_det);
     
     return log_densities;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd rmatern_copula_folded_full(int n_samples, int dim, double rho, int nu) {
+    int n = dim;  // original dimension
+    int N = 2 * n;  // folded dimension
+    Eigen::MatrixXd samples(n * n, n_samples);
+
+    // Create base matrix for 2n x 2n grid
+    Eigen::MatrixXd c = create_base_matrix(N, rho);
+    c /= 2.0;  // Divide by 2 as in dmatern_copula_folded
+
+    // Compute eigenvalues
+    Eigen::MatrixXcd eigs = compute_and_rescale_eigenvalues(c, nu);
+    Eigen::MatrixXcd lambda_sqrt = eigs.array().sqrt().inverse();
+
+    // Set up random number generation
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::normal_distribution<> d(0, 1);
+    double scale = 1.0 / (2 * dim);
+
+    for(int s = 0; s < n_samples; ++s) {
+        // Generate complex normal random field z of size 2n x 2n
+        Eigen::MatrixXcd z(N, N);
+        for(int i = 0; i < N; ++i) {
+            for(int j = 0; j < N; ++j) {
+                z(i, j) = std::complex<double>(d(gen), d(gen));
+            }
+        }
+
+        // Perform FFT, multiply by sqrt(inv(eigenvalues)), and inverse FFT
+        Eigen::MatrixXcd v = fft2(lambda_sqrt.cwiseProduct(z), scale);
+
+        // Extract the n x n subset corresponding to the original data
+        Eigen::MatrixXd sample = v.topLeftCorner(n, n).real();
+
+        // Store the sample
+        samples.col(s) = Eigen::Map<Eigen::VectorXd>(sample.data(), n * n);
+    }
+
+    return samples;
 }
