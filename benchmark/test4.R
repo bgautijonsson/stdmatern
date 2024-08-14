@@ -2,45 +2,46 @@ library(stdmatern)
 library(tidyverse)
 library(purrr)
 library(scales)
-n <- 100
-dim <- 10
-rho <- 0.9
+n <- 10
+dim1 <- 30
+dim2 <- 30
+rho1 <- 0.8
+rho2 <- 0.4
 nu <- 0
 
+
 test_fun <- function(iter) {
-  nu <- 0
-  X <- rmatern_copula(n, dim, rho, nu)
-  
-  folded <- optimise(
-    function(par) {
-      dmatern_copula_folded(X, dim, par, nu) |> sum()
-    },
-    interval = c(0, 1), 
-    maximum = TRUE
-  )$maximum
+  X <- rmatern_copula_eigen(n, dim1, dim2, rho1, rho2, nu)
 
-  circulant <- optimise(
-    function(par) {
-      dmatern_copula_circulant(X, dim, par, nu) |> sum()
-    },
-    interval = c(0, 1), 
-    maximum = TRUE
-  )$maximum
 
-  eigen <- optimise(
+  folded <- optim(
+    c(0.5, 0.5),
     function(par) {
-      dmatern_copula_eigen(X, dim, dim, par, par, nu) |> sum()
-    },
-    interval = c(0, 1), 
-    maximum = TRUE
-  )$maximum
+      -sum(dmatern_copula_folded(X, dim1, dim2, par[1], par[2], nu))
+    }
+  )$par
+
+  circulant <- optim(
+    c(0.5, 0.5),
+    function(par) {
+      -sum(dmatern_copula_circulant(X, dim1, dim2, par[1], par[2], nu))
+    }
+  )$par
+
+  eigen <- optim(
+    c(0.5, 0.5),
+    function(par) {
+      -sum(dmatern_copula_eigen(X, dim1, dim2, par[1], par[2], nu))
+    }
+  )$par
 
   tibble(
     iter = iter,
     nu = nu,
+    par = c("rho_1", "rho_2"),
     folded,
-    circulant, 
-    eigen
+    eigen,
+    circulant
   )
 }
 
@@ -50,19 +51,23 @@ results <- map(1:100, test_fun) |>
 
 results |> 
   rename(
-    Circulant = circulant,
     Folded = folded,
-    True = eigen
+    Exact = eigen,
+    Circulant = circulant
   ) |> 
-  pivot_longer(c(-iter, -nu)) |> 
+  pivot_longer(c(-iter, -nu, -par)) |> 
+  pivot_wider(names_from = par) |> 
   mutate(
-    diff = value / rho,
-    name = fct_relevel(name, "Circulant", "True"),
+    rho_1 = rho_1 / rho1,
+    rho_2 = rho_2 / rho2,
+    name = fct_relevel(name, "Exact", "Folded"),
     nu = paste0("nu = ", nu)
   ) |> 
-  ggplot(aes(diff)) +
+  pivot_longer(c(rho_1, rho_2), names_to = "param") |> 
+  ggplot(aes(value)) +
   geom_histogram(aes(fill = name), col = "white", bins = 50, position = "identity", alpha = 0.6) +
   geom_vline(xintercept = 1, lty = 2) +
+  facet_wrap("param") +
   scale_x_continuous(
     labels = function(x) percent(x - 1),
     trans = "log10",

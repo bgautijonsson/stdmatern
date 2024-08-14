@@ -12,7 +12,7 @@ eig1 <- eigen(Q1)
 A1 <- eig1$values
 V1 <- eig1$vectors
 
-Q0 <- make_matern_prec_matrix(grid_dim, rho, 0)
+Q0 <- make_matern_prec_matrix(grid_dim, grid_dim, rho, rho, 0)
 Q <- Q0
 
 for (i in seq_len(nu)) Q <- Q %*% Q0

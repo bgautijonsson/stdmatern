@@ -16,10 +16,10 @@ using namespace Eigen;
 Eigen::VectorXd marginal_sd_eigen(const Eigen::VectorXd& A1, const Eigen::MatrixXd& V1, int dim_x, const Eigen::VectorXd& A2, const Eigen::MatrixXd& V2, int dim_y, int nu) {
     Eigen::VectorXd marginal_sds = Eigen::VectorXd::Zero(dim_x * dim_y);
     
-    for (int i = 0; i < dim_x; ++i) {
-        for (int j = 0; j < dim_y; ++j) {
-            Eigen::VectorXd v = Eigen::kroneckerProduct(V2.col(j), V1.col(i));
-            double lambda = std::pow(A1(i) + A2(j), nu + 1);
+    for (int i = 0; i < dim_y; ++i) {
+        for (int j = 0; j < dim_x; ++j) {
+            Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(j), V2.col(i));
+            double lambda = std::pow(A2(i) + A1(j), nu + 1);
             marginal_sds += (v.array().square() / lambda).matrix();
         }
     }
@@ -86,7 +86,6 @@ Eigen::VectorXd dmatern_copula_eigen(const Eigen::MatrixXd& X, int dim_x, int di
     int n_obs = X.cols();
     int N = dim_x * dim_y;
     Eigen::VectorXd quadform_sums = Eigen::VectorXd::Zero(n_obs);
-    const double C = N * std::log(2 * M_PI);
 
     // Create precision matrices
     Eigen::MatrixXd Q1 = make_AR_prec_matrix(dim_x, rho1);
@@ -115,10 +114,10 @@ Eigen::VectorXd dmatern_copula_eigen(const Eigen::MatrixXd& X, int dim_x, int di
         Eigen::VectorXd local_quadform_sums = Eigen::VectorXd::Zero(n_obs);
 
         #pragma omp for reduction(+:log_det)
-        for (int i = 0; i < dim_x; ++i) {
-            for (int j = 0; j < dim_y; ++j) {
+        for (int i = 0; i < dim_y; ++i) {
+            for (int j = 0; j < dim_x; ++j) {
                 // First calculate the Kronecker product
-                Eigen::VectorXd v = Eigen::kroneckerProduct(V2.col(j), V1.col(i));
+                Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(j), V2.col(i));
                 
                 // Then scale it
                 v = D * v;
@@ -130,7 +129,7 @@ Eigen::VectorXd dmatern_copula_eigen(const Eigen::MatrixXd& X, int dim_x, int di
                 v /= norm_v;
                 
                 // Compute the eigenvalue
-                double A = std::pow(A1(i) + A2(j), nu + 1);
+                double A = std::pow(A2(i) + A1(j), nu + 1);
                 
                 // Standardize the eigenvalue
                 double lambda = A * (norm_v * norm_v);
@@ -195,10 +194,10 @@ Eigen::MatrixXd rmatern_copula_eigen(int n, int dim_x, int dim_y, double rho1, d
         int thread_id = omp_get_thread_num();
         Eigen::VectorXd x = Eigen::VectorXd::Zero(D);
 
-        for (int i = 0; i < dim_x; ++i) {
-            for (int j = 0; j < dim_y; ++j) {
-                Eigen::VectorXd v = Eigen::kroneckerProduct(V2.col(j), V1.col(i));
-                double lambda = std::pow(A1(i) + A2(j), -(nu + 1.0) / 2.0);
+        for (int i = 0; i < dim_y; ++i) {
+            for (int j = 0; j < dim_x; ++j) {
+                Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(j), V2.col(i));
+                double lambda = std::pow(A2(i) + A1(j), -(nu + 1.0) / 2.0);
                 x += lambda * d(generators[thread_id]) * v;
             }
         }

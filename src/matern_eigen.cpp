@@ -10,6 +10,36 @@
 using namespace Rcpp;
 using namespace Eigen;
 
+// Function to create the standardized Matérn precision matrix with eigendecomposition method
+// [[Rcpp::export]]
+Eigen::SparseMatrix<double> make_matern_prec_matrix(int dim_x, int dim_y, double rho1, double rho2, int nu) {
+    int N = dim_x * dim_y;
+    // Create precision matrices
+    Eigen::MatrixXd Q1 = make_AR_prec_matrix(dim_x, rho1);
+    Eigen::MatrixXd Q2 = make_AR_prec_matrix(dim_y, rho2);
+
+    // Create full Q matrix using Kronecker sum
+    Eigen::SparseMatrix<double> I1(dim_x, dim_x);
+    I1.setIdentity();
+
+    Eigen::SparseMatrix<double> I2(dim_y, dim_y);
+    I2.setIdentity();
+
+
+    Eigen::SparseMatrix<double> Q = Eigen::kroneckerProduct(Q1, I2) + Eigen::kroneckerProduct(I1, Q2);
+
+    // Apply matrix multiplication nu times
+    if (nu > 0) {
+        Eigen::SparseMatrix<double> temp = Q;
+        for (int i = 0; i < nu; ++i) {
+            Q = Q * temp;
+            Q.makeCompressed();
+        }
+    }
+
+
+    return Q;
+}
 
 // [[Rcpp::export]]
 Eigen::VectorXd dmatern_eigen(const Eigen::MatrixXd& X, int dim_x, int dim_y, double rho1, double rho2, int nu) {
