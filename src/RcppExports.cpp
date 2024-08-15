@@ -61,6 +61,37 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// make_matern_prec_matrix
+Eigen::SparseMatrix<double> make_matern_prec_matrix(int dim_x, int dim_y, double rho1, double rho2, int nu);
+RcppExport SEXP _stdmatern_make_matern_prec_matrix(SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type dim_x(dim_xSEXP);
+    Rcpp::traits::input_parameter< int >::type dim_y(dim_ySEXP);
+    Rcpp::traits::input_parameter< double >::type rho1(rho1SEXP);
+    Rcpp::traits::input_parameter< double >::type rho2(rho2SEXP);
+    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(make_matern_prec_matrix(dim_x, dim_y, rho1, rho2, nu));
+    return rcpp_result_gen;
+END_RCPP
+}
+// dmatern_cholesky
+Eigen::VectorXd dmatern_cholesky(const Eigen::MatrixXd& X, int dim_x, int dim_y, double rho1, double rho2, int nu);
+RcppExport SEXP _stdmatern_dmatern_cholesky(SEXP XSEXP, SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type dim_x(dim_xSEXP);
+    Rcpp::traits::input_parameter< int >::type dim_y(dim_ySEXP);
+    Rcpp::traits::input_parameter< double >::type rho1(rho1SEXP);
+    Rcpp::traits::input_parameter< double >::type rho2(rho2SEXP);
+    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(dmatern_cholesky(X, dim_x, dim_y, rho1, rho2, nu));
+    return rcpp_result_gen;
+END_RCPP
+}
 // dmatern_copula_circulant
 Eigen::VectorXd dmatern_copula_circulant(const Eigen::MatrixXd& X, int dim1, int dim2, double rho1, double rho2, int nu);
 RcppExport SEXP _stdmatern_dmatern_copula_circulant(SEXP XSEXP, SEXP dim1SEXP, SEXP dim2SEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP) {
@@ -217,21 +248,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// make_matern_prec_matrix
-Eigen::SparseMatrix<double> make_matern_prec_matrix(int dim_x, int dim_y, double rho1, double rho2, int nu);
-RcppExport SEXP _stdmatern_make_matern_prec_matrix(SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type dim_x(dim_xSEXP);
-    Rcpp::traits::input_parameter< int >::type dim_y(dim_ySEXP);
-    Rcpp::traits::input_parameter< double >::type rho1(rho1SEXP);
-    Rcpp::traits::input_parameter< double >::type rho2(rho2SEXP);
-    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
-    rcpp_result_gen = Rcpp::wrap(make_matern_prec_matrix(dim_x, dim_y, rho1, rho2, nu));
-    return rcpp_result_gen;
-END_RCPP
-}
 // dmatern_eigen
 Eigen::VectorXd dmatern_eigen(const Eigen::MatrixXd& X, int dim_x, int dim_y, double rho1, double rho2, int nu);
 RcppExport SEXP _stdmatern_dmatern_eigen(SEXP XSEXP, SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP) {
@@ -270,6 +286,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_stdmatern_create_base_matrix", (DL_FUNC) &_stdmatern_create_base_matrix, 4},
     {"_stdmatern_compute_and_rescale_eigenvalues", (DL_FUNC) &_stdmatern_compute_and_rescale_eigenvalues, 2},
     {"_stdmatern_matrix_vector_product", (DL_FUNC) &_stdmatern_matrix_vector_product, 2},
+    {"_stdmatern_make_matern_prec_matrix", (DL_FUNC) &_stdmatern_make_matern_prec_matrix, 5},
+    {"_stdmatern_dmatern_cholesky", (DL_FUNC) &_stdmatern_dmatern_cholesky, 6},
     {"_stdmatern_dmatern_copula_circulant", (DL_FUNC) &_stdmatern_dmatern_copula_circulant, 6},
     {"_stdmatern_rmatern_copula_circulant", (DL_FUNC) &_stdmatern_rmatern_copula_circulant, 6},
     {"_stdmatern_construct_circulant_precision", (DL_FUNC) &_stdmatern_construct_circulant_precision, 5},
@@ -280,7 +298,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_stdmatern_fold_data", (DL_FUNC) &_stdmatern_fold_data, 3},
     {"_stdmatern_dmatern_copula_folded", (DL_FUNC) &_stdmatern_dmatern_copula_folded, 6},
     {"_stdmatern_rmatern_copula_folded_full", (DL_FUNC) &_stdmatern_rmatern_copula_folded_full, 6},
-    {"_stdmatern_make_matern_prec_matrix", (DL_FUNC) &_stdmatern_make_matern_prec_matrix, 5},
     {"_stdmatern_dmatern_eigen", (DL_FUNC) &_stdmatern_dmatern_eigen, 6},
     {"_stdmatern_rmatern_eigen", (DL_FUNC) &_stdmatern_rmatern_eigen, 6},
     {NULL, NULL, 0}

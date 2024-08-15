@@ -17,6 +17,14 @@ matrix_vector_product <- function(eigenvalues, v) {
     .Call(`_stdmatern_matrix_vector_product`, eigenvalues, v)
 }
 
+make_matern_prec_matrix <- function(dim_x, dim_y, rho1, rho2, nu) {
+    .Call(`_stdmatern_make_matern_prec_matrix`, dim_x, dim_y, rho1, rho2, nu)
+}
+
+dmatern_cholesky <- function(X, dim_x, dim_y, rho1, rho2, nu) {
+    .Call(`_stdmatern_dmatern_cholesky`, X, dim_x, dim_y, rho1, rho2, nu)
+}
+
 dmatern_copula_circulant <- function(X, dim1, dim2, rho1, rho2, nu) {
     .Call(`_stdmatern_dmatern_copula_circulant`, X, dim1, dim2, rho1, rho2, nu)
 }
@@ -55,10 +63,6 @@ dmatern_copula_folded <- function(X, dim1, dim2, rho1, rho2, nu) {
 
 rmatern_copula_folded_full <- function(n_samples, dim1, dim2, rho1, rho2, nu) {
     .Call(`_stdmatern_rmatern_copula_folded_full`, n_samples, dim1, dim2, rho1, rho2, nu)
-}
-
-make_matern_prec_matrix <- function(dim_x, dim_y, rho1, rho2, nu) {
-    .Call(`_stdmatern_make_matern_prec_matrix`, dim_x, dim_y, rho1, rho2, nu)
 }
 
 dmatern_eigen <- function(X, dim_x, dim_y, rho1, rho2, nu) {

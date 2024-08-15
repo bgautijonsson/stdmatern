@@ -8,12 +8,15 @@ library(gt)
 rho <- 0.5
 nu <- 0
 
+
 my_fun <- function(dim) {
   X <- rmatern_copula_eigen(1, dim, dim, rho, rho, nu)
   bench::mark(
+    "Cholesky (Unscaled)" = dmatern_cholesky(X, dim, dim, rho, rho, nu),
+    "Eigen (Unscaled)" = dmatern_eigen(X, dim, dim, rho, rho, nu),
     "Eigen" = dmatern_copula_eigen(X, dim, dim, rho, rho, nu),
-    "Circulant" = dmatern_copula_circulant(X, dim, rho, nu),
-    "Folded" = dmatern_copula_folded(X, dim, rho, nu),
+    "Circulant" = dmatern_copula_circulant(X, dim, dim, rho, rho, nu),
+    "Folded" = dmatern_copula_folded(X, dim, dim, rho, rho, nu),
     filter_gc = FALSE,
     iterations = 20,
     check = FALSE
@@ -37,13 +40,25 @@ results |>
   pivot_wider(names_from = Type, values_from = time) |> 
   mutate(
     sp_1 = as.numeric(Eigen/Circulant) |> round(2) |> paste0("x"),
-    sp_2 = as.numeric(Eigen/Folded) |> round(2) |> paste0("x")
+    sp_2 = as.numeric(Eigen/Folded) |> round(2) |> paste0("x"),
+    sp_3 = as.numeric(`Cholesky (Unscaled)` / `Eigen (Unscaled)`) |> round(2) |> paste0("x")
   ) |> 
   select(
-    Q_size, Exact = Eigen, circ = Circulant, sp_1, fol = Folded, sp_2
+    Q_size, 
+    "Cholesky (Unscaled)", 
+    "Eigen (Unscaled)",
+    sp_3,
+    Eigen, 
+    circ = Circulant, 
+    sp_1, 
+    fol = Folded, 
+    sp_2
   ) |> 
   gt() |> 
   cols_label(
+    `Cholesky (Unscaled)` = "Cholesky",
+    `Eigen (Unscaled)` = "Eigen",
+    sp_3 = "Speed-up",
     circ = "Time",
     sp_1 = "Speed-Up",
     fol = "Time",
@@ -51,18 +66,26 @@ results |>
   ) |> 
   tab_spanner(
     label = "Circulant",
-    columns = 3:4
+    columns = 6:7
   ) |> 
-    tab_spanner(
-      label = "Folded",
-      columns = 5:6
-    ) |> 
+  tab_spanner(
+    label = "Folded",
+    columns = 8:9
+  ) |> 
+  tab_spanner(
+    label = "Unscaled",
+    2:4
+  ) |> 
+  tab_spanner(
+    label = "Scaled",
+    columns = 5:9
+  ) |> 
   tab_caption(
-    md("Benchmarking how long it takes to evaluate the density of a Mátern($\\nu$)-like field with correlation parameter $\\rho$, scaled to have unit marginal variance")
+    md("Benchmarking how long it takes to evaluate the density of a Mátern($\\nu$)-like field with correlation parameter $\\rho$, either unscaled or scaled to have unit marginal variance")
   )
 
 
-Tdim <- 20
+dim <- 20
 rho <- 0.9
 nu <- 2
 X <- rmatern_copula_circulant(1, dim, rho, nu)
