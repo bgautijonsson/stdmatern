@@ -10,42 +10,29 @@
 using namespace Rcpp;
 using namespace Eigen;
 
-// Function to create the standardized Matérn precision matrix with eigendecomposition method
+// Helper function to compute D
 // [[Rcpp::export]]
-Eigen::SparseMatrix<double> make_matern_prec_matrix(int dim_x, int dim_y, double rho1, double rho2, int nu) {
-    int N = dim_x * dim_y;
-    // Create precision matrices
-    Eigen::MatrixXd Q1 = make_AR_prec_matrix(dim_x, rho1);
-    Eigen::MatrixXd Q2 = make_AR_prec_matrix(dim_y, rho2);
-
-    // Create full Q matrix using Kronecker sum
-    Eigen::SparseMatrix<double> I1(dim_x, dim_x);
-    I1.setIdentity();
-
-    Eigen::SparseMatrix<double> I2(dim_y, dim_y);
-    I2.setIdentity();
-
-
-    Eigen::SparseMatrix<double> Q = Eigen::kroneckerProduct(Q1, I2) + Eigen::kroneckerProduct(I1, Q2);
-
-    // Apply matrix multiplication nu times
-    if (nu > 0) {
-        Eigen::SparseMatrix<double> temp = Q;
-        for (int i = 0; i < nu; ++i) {
-            Q = Q * temp;
-            Q.makeCompressed();
+Eigen::VectorXd marginal_sd_cholesky(const Eigen::SparseMatrix<double>& L, int nu) {
+    int N = L.rows();
+    Eigen::MatrixXd L_inv = L.triangularView<Eigen::Lower>().solve(Eigen::MatrixXd::Identity(N, N));
+    
+    Eigen::MatrixXd temp = L_inv;
+    for (int i = 0; i < nu; ++i) {
+        if (i % 2 == 0) {
+            temp = L_inv.transpose() * temp;
+        } else {
+            temp = L_inv * temp;
         }
     }
-
-
-    return Q;
+    
+    return temp.colwise().squaredNorm().cwiseSqrt();
 }
 
+
 // [[Rcpp::export]]
-Eigen::VectorXd dmatern_cholesky(const Eigen::MatrixXd& X, int dim_x, int dim_y, double rho1, double rho2, int nu) {
+Eigen::VectorXd dmatern_copula_cholesky(const Eigen::MatrixXd& X, int dim_x, int dim_y, double rho1, double rho2, int nu) {
     int n_obs = X.cols();
     int N = dim_x * dim_y;
-    const double C = N * std::log(2 * M_PI);
 
     // Create base precision matrix Q
     Eigen::SparseMatrix<double> Q1 = make_AR_prec_matrix(dim_x, rho1);
@@ -65,15 +52,14 @@ Eigen::VectorXd dmatern_cholesky(const Eigen::MatrixXd& X, int dim_x, int dim_y,
 
     // Get the sparse Cholesky factor L
     Eigen::SparseMatrix<double> L = cholSolver.matrixL();
+    Eigen::VectorXd D = marginal_sd_cholesky(L, nu);
 
     // Compute log-determinant
-    double log_det = 2 * (nu + 1) * L.diagonal().array().log().sum();
-
+    double log_det = D.log().sum() + (nu + 1) * L.diagonal().array().log().sum();
     // Compute quadratic forms
     Eigen::VectorXd quadform_sums(n_obs);
-    #pragma omp parallel for
     for (int i = 0; i < n_obs; ++i) {
-        Eigen::VectorXd y = X.col(i);
+        Eigen::VectorXd y = D.cwiseProduct(X.col(i));
         for (int j = 0; j <= nu; ++j) {
             if (j % 2 == 0) {
                 y = L.transpose() * y;
@@ -84,8 +70,11 @@ Eigen::VectorXd dmatern_cholesky(const Eigen::MatrixXd& X, int dim_x, int dim_y,
         quadform_sums(i) = y.squaredNorm();
     }
 
+    // Subtract x'Ix (sum of squared elements for each observation)
+    Eigen::VectorXd x_squared = X.colwise().squaredNorm();
+
     // Compute log densities
-    Eigen::VectorXd log_densities = -0.5 * (C - log_det + quadform_sums.array());
+    Eigen::VectorXd log_densities = log_det - 0.5 * (quadform_sums.array() - x_squared.array());
 
     return log_densities;
 }

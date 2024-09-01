@@ -15,7 +15,7 @@ using namespace Eigen;
 
 
 // [[Rcpp::export]]
-Eigen::VectorXd marginal_sd_eigen(const Eigen::VectorXd& A1, const Eigen::MatrixXd& V1, int dim_x, const Eigen::VectorXd& A2, const Eigen::MatrixXd& V2, int dim_y, int nu) {
+Eigen::ArrayXd marginal_sd_eigen(const Eigen::VectorXd& A1, const Eigen::MatrixXd& V1, int dim_x, const Eigen::VectorXd& A2, const Eigen::MatrixXd& V2, int dim_y, int nu) {
     Eigen::ArrayXd marginal_sds = Eigen::ArrayXd::Zero(dim_x * dim_y);
     
     #pragma omp parallel
@@ -40,16 +40,15 @@ Eigen::VectorXd marginal_sd_eigen(const Eigen::VectorXd& A1, const Eigen::Matrix
     return marginal_sds.sqrt();
 }
 
-// Function to create the standardized Matérn precision matrix with eigendecomposition method
+// Function to create the standardized Matérn precision matrix using eigendecomposition
 // [[Rcpp::export]]
 Eigen::SparseMatrix<double> make_standardized_matern_eigen(int dim_x, int dim_y, double rho1, double rho2, int nu) {
     int N = dim_x * dim_y;
-    // Create precision matrices
+    // Create precision matrices for each dimension
     Eigen::MatrixXd Q1 = make_AR_prec_matrix(dim_x, rho1);
     Eigen::MatrixXd Q2 = make_AR_prec_matrix(dim_y, rho2);
 
-
-    // Perform eigendecompositions
+    // Perform eigendecompositions of Q1 and Q2
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver1(Q1);
     Eigen::VectorXd A1 = solver1.eigenvalues();
     Eigen::MatrixXd V1 = solver1.eigenvectors();
@@ -61,21 +60,21 @@ Eigen::SparseMatrix<double> make_standardized_matern_eigen(int dim_x, int dim_y,
     // Compute marginal standard deviations
     Eigen::ArrayXd marginal_sds = marginal_sd_eigen(A1, V1, dim_x, A2, V2, dim_y, nu);
 
-    // Create diagonal matrix D
+    // Create diagonal matrix D with marginal standard deviations
     Eigen::DiagonalMatrix<double, Eigen::Dynamic> D(N);
     D.diagonal() = marginal_sds;
 
-    // Create full Q matrix using Kronecker sum
+    // Create identity matrices for Kronecker product
     Eigen::SparseMatrix<double> I1(dim_x, dim_x);
     I1.setIdentity();
 
     Eigen::SparseMatrix<double> I2(dim_y, dim_y);
     I2.setIdentity();
 
-
+    // Create full Q matrix using Kronecker sum
     Eigen::SparseMatrix<double> Q = Eigen::kroneckerProduct(Q1, I2) + Eigen::kroneckerProduct(I1, Q2);
 
-    // Apply matrix multiplication nu times
+    // Apply matrix multiplication nu times for higher order Matérn fields
     if (nu > 0) {
         Eigen::SparseMatrix<double> temp = Q;
         for (int i = 0; i < nu; ++i) {
@@ -84,24 +83,24 @@ Eigen::SparseMatrix<double> make_standardized_matern_eigen(int dim_x, int dim_y,
         }
     }
 
-    // Standardize Q
+    // Standardize Q to ensure its inverse is a correlation matrix
     Eigen::SparseMatrix<double> Q_standardized = D * Q * D;
 
     return Q_standardized;
 }
 
+// Function to compute the log-density of a Matérn copula
 // [[Rcpp::export]]
-Rcpp::NumericVector dmatern_copula_eigen(const Eigen::MatrixXd& X, int dim_x, int dim_y, double rho1, double rho2, int nu) {
+Eigen::ArrayXd dmatern_copula_eigen(const Eigen::MatrixXd& X, int dim_x, int dim_y, double rho1, double rho2, int nu) {
     int n_obs = X.cols();
-    int N = dim_x * dim_y;
+    int N = X.rows();
     ArrayXd quadform_sums = ArrayXd::Zero(n_obs);
-    Rcpp::Timer timer;
 
-    // Create precision matrices
+    // Create precision matrices for each dimension
     MatrixXd Q1 = make_AR_prec_matrix(dim_x, rho1);
     MatrixXd Q2 = make_AR_prec_matrix(dim_y, rho2);
 
-    // Perform eigendecompositions
+    // Perform eigendecompositions of Q1 and Q2
     SelfAdjointEigenSolver<MatrixXd> solver1(Q1);
     VectorXd A1 = solver1.eigenvalues();
     MatrixXd V1 = solver1.eigenvectors();
@@ -109,10 +108,8 @@ Rcpp::NumericVector dmatern_copula_eigen(const Eigen::MatrixXd& X, int dim_x, in
     SelfAdjointEigenSolver<MatrixXd> solver2(Q2);
     VectorXd A2 = solver2.eigenvalues();
     MatrixXd V2 = solver2.eigenvectors();
-
-    timer.step("Eigendecomposition");
-
-    // Compute marginal standard deviations
+    
+    // Compute marginal standard deviations in parallel
     ArrayXd marginal_sds = ArrayXd::Zero(dim_x * dim_y);
     
     #pragma omp parallel
@@ -134,28 +131,31 @@ Rcpp::NumericVector dmatern_copula_eigen(const Eigen::MatrixXd& X, int dim_x, in
         }
     }
 
-    timer.step("Marginal SDs");
-
+    marginal_sds = marginal_sds.sqrt();
     double log_det = 0;
 
     // Transpose X for better memory access if it's stored in column-major order
     MatrixXd X_t = X.transpose();
 
+    // Compute quadratic forms and log determinant in parallel
     #pragma omp parallel reduction(+:log_det)
     {
         ArrayXd local_quadform_sums = ArrayXd::Zero(n_obs);
-        VectorXd v = VectorXd::Zero(dim_x * dim_y);
+        VectorXd v(dim_x * dim_y);
         VectorXd u = VectorXd::Zero(dim_x * dim_y);
+        double norm_v;
+        double lambda;
+        double A;
 
         #pragma omp for collapse(2) nowait
         for (int i = 0; i < dim_x; ++i) {
             for (int j = 0; j < dim_y; ++j) {
                 v = kroneckerProduct(V1.col(i), V2.col(j)).array() * marginal_sds;
-                double norm_v = v.norm();
+                norm_v = v.norm();
                 v /= norm_v;
                 
-                double A = std::pow(A1(i) + A2(j), nu + 1);
-                double lambda = A * (norm_v * norm_v);
+                A = std::pow(A1(i) + A2(j), nu + 1);
+                lambda = A * (norm_v * norm_v);
 
                 log_det += std::log(lambda);
                 
@@ -170,16 +170,11 @@ Rcpp::NumericVector dmatern_copula_eigen(const Eigen::MatrixXd& X, int dim_x, in
         }
     }
 
-    timer.step("Quadform Sums");
-
+    // Compute log densities
     ArrayXd x_squared = X.colwise().squaredNorm().array();
     ArrayXd log_densities = -0.5 * (quadform_sums - log_det - x_squared);
-    timer.step("Log Densities");
-
-    Rcpp::NumericVector res(timer);
     
-
-    return res;
+    return log_densities;
 }
 
 // [[Rcpp::export]]

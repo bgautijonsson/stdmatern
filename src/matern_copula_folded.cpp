@@ -10,25 +10,21 @@ using namespace Rcpp;
 using namespace Eigen;
 
 // [[Rcpp::export]]
-Eigen::VectorXd fold_data(const Eigen::VectorXd& X, int n1, int n2) {
-    Eigen::VectorXd folded(4 * n1 * n2);
-    Eigen::Map<const Eigen::MatrixXd> X_mat(X.data(), n1, n2);
+Eigen::VectorXd fold_data(const Eigen::VectorXd& X, int dim1, int dim2) {
+    // Map X to a matrix with dim2 rows and dim1 columns, filled column-wise
+    Eigen::Map<const Eigen::MatrixXd> X_mat(X.data(), dim2, dim1);
+    Eigen::MatrixXd folded_mat(2*dim2, 2*dim1);
+    Eigen::MatrixXd zero_matrix = Eigen::MatrixXd::Zero(dim2, dim1);
+
     
-    for (int i = 0; i < n1; ++i) {
-        for (int j = 0; j < n2; ++j) {
-            // First quarter
-            folded[i * 2*n2 + j] = X_mat(i, j);
-            
-            // Second quarter
-            folded[i * 2*n2 + (2*n2 - 1 - j)] = X_mat(i, j);
-            
-            // Third quarter
-            folded[(2*n1 - 1 - i) * 2*n2 + j] = X_mat(i, j);
-            
-            // Fourth quarter
-            folded[(2*n1 - 1 - i) * 2*n2 + (2*n2 - 1 - j)] = X_mat(i, j);
-        }
-    }
+    // Fill the folded matrix
+    folded_mat.block(0, 0, dim2, dim1) = X_mat;  // Original matrix in top-left
+    folded_mat.block(0, dim1, dim2, dim1) = X_mat.rowwise().reverse();  // Columns mirrored in top-right
+    folded_mat.block(dim2, 0, dim2, dim1) = X_mat.colwise().reverse();  // Rows mirrored in bottom-left
+    folded_mat.block(dim2, dim1, dim2, dim1) = X_mat.reverse();  // Everything mirrored in bottom-right
+    
+    // Reshape the matrix into a column-major vector to match R's default behavior
+    Eigen::VectorXd folded = Eigen::Map<Eigen::VectorXd>(folded_mat.data(), 4*dim1*dim2);
     
     return folded;
 }
@@ -40,7 +36,7 @@ Eigen::VectorXd dmatern_copula_folded(const Eigen::MatrixXd& X, int dim1, int di
     Eigen::VectorXd quad_forms(n_obs);
     
     // Create base matrix
-    Eigen::MatrixXd c = create_base_matrix(2 * dim1, 2 * dim2, rho1, rho2);
+    Eigen::MatrixXd c = create_base_matrix(2 * dim2, 2 * dim1, rho2, rho1);
     
     // Compute eigenvalues
     Eigen::MatrixXcd eigs = compute_and_rescale_eigenvalues(c, nu);

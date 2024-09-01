@@ -4,7 +4,7 @@
 #include <random>
 #include <fftw3.h>
 
-// [[Rcpp::depends(RcppEigen, fftwtools)]]
+// [[Rcpp::depends(RcppEigen)]]
 
 using namespace Rcpp;
 using namespace Eigen;

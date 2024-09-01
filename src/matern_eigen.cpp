@@ -38,13 +38,13 @@ Eigen::VectorXd dmatern_eigen(const Eigen::MatrixXd& X, int dim_x, int dim_y, do
         Eigen::VectorXd local_quadform_sums = Eigen::VectorXd::Zero(n_obs);
 
         #pragma omp for reduction(+:log_det)
-        for (int i = 0; i < dim_y; ++i) {
-            for (int j = 0; j < dim_x; ++j) {
+        for (int i = 0; i < dim_x; ++i) {
+            for (int j = 0; j < dim_y; ++j) {
                 // First calculate the Kronecker product
-                Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(j), V2.col(i));
+                Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(i), V2.col(j));
                 
                 // Compute the eigenvalue
-                double lambda = std::pow(A2(i) + A1(j), nu + 1);
+                double lambda = std::pow(A1(i) + A2(j), nu + 1);
 
                 log_det += std::log(lambda);
                 
@@ -102,7 +102,7 @@ Eigen::MatrixXd rmatern_eigen(int n, int dim_x, int dim_y, double rho1, double r
 
         for (int i = 0; i < dim_x; ++i) {
             for (int j = 0; j < dim_y; ++j) {
-                Eigen::VectorXd v = Eigen::kroneckerProduct(V2.col(j), V1.col(i));
+                Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(i), V2.col(j));
                 double lambda = std::pow(A1(i) + A2(j), -(nu + 1.0) / 2.0);
                 x += lambda * d(generators[thread_id]) * v;
             }

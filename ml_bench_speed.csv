@@ -1,0 +1,5 @@
+dim,Exact,Folded,d_1,Circulant,d_2
+10 x 10, 13.7ms, 8.3ms,1.65x, 7.3ms,1.87x
+20 x 20, 38.3ms,25.4ms,1.5x, 7.84ms,4.88x
+30 x 30, 75.1ms,41.1ms,1.83x,21.81ms,3.44x
+40 x 40,165ms,63.7ms,2.59x,25.04ms,6.59x

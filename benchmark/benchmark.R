@@ -8,7 +8,6 @@ library(gt)
 rho <- 0.5
 nu <- 0
 
-
 my_fun <- function(dim) {
   X <- rmatern_copula_eigen(1, dim, dim, rho, rho, nu)
   bench::mark(
@@ -20,41 +19,49 @@ my_fun <- function(dim) {
     filter_gc = FALSE,
     iterations = 20,
     check = FALSE
-  ) |> 
+  ) |>
     mutate(
       dim = dim
     )
 }
 
 
-results <- map(seq(10, 200, by = 10), my_fun)
+results <- map(
+  c(seq(10, 200, by = 10)),
+  my_fun,
+  .progress = TRUE
+)
 
-
-results |> 
-  list_rbind() |> 
-  select(Q_size = dim, Type = expression, time = median, memory = mem_alloc) |> 
+results |>
+  list_rbind() |>
+  select(Q_size = dim, Type = expression, time = median, memory = mem_alloc) |>
   mutate(
     Q_size = glue("{Q_size^2}x{Q_size^2}")
-  ) |> 
-  select(-memory) |> 
-  pivot_wider(names_from = Type, values_from = time) |> 
+  ) |>
+  select(-memory) |>
+  pivot_wider(names_from = Type, values_from = time) |>
   mutate(
-    sp_1 = as.numeric(Eigen/Circulant) |> round(2) |> paste0("x"),
-    sp_2 = as.numeric(Eigen/Folded) |> round(2) |> paste0("x"),
-    sp_3 = as.numeric(`Cholesky (Unscaled)` / `Eigen (Unscaled)`) |> round(2) |> paste0("x")
-  ) |> 
+    sp_1 = as.numeric(Circulant / Eigen),
+    sp_2 = as.numeric(Folded / Eigen),
+    sp_3 = as.numeric(`Eigen (Unscaled)` / `Cholesky (Unscaled)`)
+  ) |>
+  mutate_at(
+    vars(starts_with("sp_")),
+    \(x) scales::percent(x, accuracy = 0.1, decimal_mark = ".", big.mark = ",")
+  ) |>
   select(
-    Q_size, 
-    "Cholesky (Unscaled)", 
+    Q_size,
+    "Cholesky (Unscaled)",
     "Eigen (Unscaled)",
     sp_3,
-    Eigen, 
-    circ = Circulant, 
-    sp_1, 
-    fol = Folded, 
+    Eigen,
+    circ = Circulant,
+    sp_1,
+    fol = Folded,
     sp_2
-  ) |> 
-  gt() |> 
+  )
+# write_csv("benchmark_all.csv")
+gt() |>
   cols_label(
     `Cholesky (Unscaled)` = "Cholesky",
     `Eigen (Unscaled)` = "Eigen",
@@ -63,82 +70,64 @@ results |>
     sp_1 = "Speed-Up",
     fol = "Time",
     sp_2 = "Speed-Up"
-  ) |> 
+  ) |>
   tab_spanner(
     label = "Circulant",
     columns = 6:7
-  ) |> 
+  ) |>
   tab_spanner(
     label = "Folded",
     columns = 8:9
-  ) |> 
+  ) |>
   tab_spanner(
     label = "Unscaled",
     2:4
-  ) |> 
+  ) |>
   tab_spanner(
     label = "Scaled",
     columns = 5:9
-  ) |> 
+  ) |>
   tab_caption(
     md("Benchmarking how long it takes to evaluate the density of a Mátern($\\nu$)-like field with correlation parameter $\\rho$, either unscaled or scaled to have unit marginal variance")
   )
 
 
-dim <- 20
-rho <- 0.9
-nu <- 2
-X <- rmatern_copula_circulant(1, dim, rho, nu)
-
-tibble(
-  Z = as.numeric(X)
-) |> 
-  mutate(
-    id = row_number(),
-    lat = (id - 1) %% dim[1],
-    lon = cumsum(lat == 0),
-  ) |> 
-  ggplot(aes(lat, lon, fill = Z)) +
-  geom_raster() +
-  scale_fill_viridis_c() +
-  coord_fixed(expand = FALSE)
-
-dmatern_eigen(X, dim, dim, rho, rho, nu)
-dmatern_copula_circulant(X, dim, rho, nu)
-
-results |> 
-  list_rbind() |> 
-  select(Q_size = dim, Type = expression, time = median, memory = mem_alloc) |> 
-  mutate(
-    Q_size = glue("{Q_size^2}x{Q_size^2}")
-  ) |> 
-  select(-memory) |> 
-  pivot_wider(names_from = Type, values_from = time)
 
 
-results |> 
-  list_rbind() |> 
-  select(Q_size = dim, Type = expression, time = median, memory = mem_alloc) |> 
+
+
+results |>
+  list_rbind() |>
+  select(dim, expression, time = median) |>
   mutate(
     time = as.numeric(time),
-    Q_size = Q_size^2
-  ) |> 
-  group_by(Type) |> 
+    expression = as.character(expression),
+    dim = dim^2
+  ) |>
   reframe(
-    lm(log(time) ~ log(Q_size)) |> 
-      broom::tidy()
+    lm(log(time) ~ log(dim)) |>
+      broom::tidy(),
+    .by = expression
+  ) |>
+  filter(term == "log(dim)")
+
+results |>
+  list_rbind() |>
+  select(dim, expression, time = median) |>
+  mutate(
+    time = as.numeric(time),
+    expression = as.character(expression),
+    dim = dim^2
+  ) |>
+  reframe(
+    lm(log(time) ~ log(dim)) |>
+      broom::augment(),
+    .by = expression
+  ) |>
+  janitor::clean_names() |>
+  ggplot(aes(exp(log_dim), exp(log_time), col = expression)) +
+  geom_point() +
+  geom_line() +
+  scale_y_log10(
+    labels = scales::label_timespan()
   )
-
-
-  results |> 
-    list_rbind() |> 
-    select(dim, type = expression, time = median, memory = mem_alloc) |> 
-    mutate(
-      locations = dim^2,
-      type = as.character(type),
-      time = as.numeric(time)
-    ) |> 
-    ggplot(aes(locations, time)) +
-    geom_line(aes(lty = type)) +
-    scale_y_log10()
-  

@@ -25,6 +25,14 @@ dmatern_cholesky <- function(X, dim_x, dim_y, rho1, rho2, nu) {
     .Call(`_stdmatern_dmatern_cholesky`, X, dim_x, dim_y, rho1, rho2, nu)
 }
 
+marginal_sd_cholesky <- function(L, nu) {
+    .Call(`_stdmatern_marginal_sd_cholesky`, L, nu)
+}
+
+dmatern_copula_cholesky <- function(X, dim_x, dim_y, rho1, rho2, nu) {
+    .Call(`_stdmatern_dmatern_copula_cholesky`, X, dim_x, dim_y, rho1, rho2, nu)
+}
+
 dmatern_copula_circulant <- function(X, dim1, dim2, rho1, rho2, nu) {
     .Call(`_stdmatern_dmatern_copula_circulant`, X, dim1, dim2, rho1, rho2, nu)
 }
@@ -53,8 +61,8 @@ rmatern_copula_eigen <- function(n, dim_x, dim_y, rho1, rho2, nu) {
     .Call(`_stdmatern_rmatern_copula_eigen`, n, dim_x, dim_y, rho1, rho2, nu)
 }
 
-fold_data <- function(X, n1, n2) {
-    .Call(`_stdmatern_fold_data`, X, n1, n2)
+fold_data <- function(X, dim1, dim2) {
+    .Call(`_stdmatern_fold_data`, X, dim1, dim2)
 }
 
 dmatern_copula_folded <- function(X, dim1, dim2, rho1, rho2, nu) {

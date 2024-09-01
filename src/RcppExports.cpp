@@ -92,6 +92,34 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// marginal_sd_cholesky
+Eigen::VectorXd marginal_sd_cholesky(const Eigen::SparseMatrix<double>& L, int nu);
+RcppExport SEXP _stdmatern_marginal_sd_cholesky(SEXP LSEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::SparseMatrix<double>& >::type L(LSEXP);
+    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(marginal_sd_cholesky(L, nu));
+    return rcpp_result_gen;
+END_RCPP
+}
+// dmatern_copula_cholesky
+Eigen::VectorXd dmatern_copula_cholesky(const Eigen::MatrixXd& X, int dim_x, int dim_y, double rho1, double rho2, int nu);
+RcppExport SEXP _stdmatern_dmatern_copula_cholesky(SEXP XSEXP, SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type dim_x(dim_xSEXP);
+    Rcpp::traits::input_parameter< int >::type dim_y(dim_ySEXP);
+    Rcpp::traits::input_parameter< double >::type rho1(rho1SEXP);
+    Rcpp::traits::input_parameter< double >::type rho2(rho2SEXP);
+    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(dmatern_copula_cholesky(X, dim_x, dim_y, rho1, rho2, nu));
+    return rcpp_result_gen;
+END_RCPP
+}
 // dmatern_copula_circulant
 Eigen::VectorXd dmatern_copula_circulant(const Eigen::MatrixXd& X, int dim1, int dim2, double rho1, double rho2, int nu);
 RcppExport SEXP _stdmatern_dmatern_copula_circulant(SEXP XSEXP, SEXP dim1SEXP, SEXP dim2SEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP) {
@@ -140,7 +168,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // marginal_sd_eigen
-Eigen::VectorXd marginal_sd_eigen(const Eigen::VectorXd& A1, const Eigen::MatrixXd& V1, int dim_x, const Eigen::VectorXd& A2, const Eigen::MatrixXd& V2, int dim_y, int nu);
+Eigen::ArrayXd marginal_sd_eigen(const Eigen::VectorXd& A1, const Eigen::MatrixXd& V1, int dim_x, const Eigen::VectorXd& A2, const Eigen::MatrixXd& V2, int dim_y, int nu);
 RcppExport SEXP _stdmatern_marginal_sd_eigen(SEXP A1SEXP, SEXP V1SEXP, SEXP dim_xSEXP, SEXP A2SEXP, SEXP V2SEXP, SEXP dim_ySEXP, SEXP nuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -172,7 +200,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // dmatern_copula_eigen
-Eigen::VectorXd dmatern_copula_eigen(const Eigen::MatrixXd& X, int dim_x, int dim_y, double rho1, double rho2, int nu);
+Eigen::ArrayXd dmatern_copula_eigen(const Eigen::MatrixXd& X, int dim_x, int dim_y, double rho1, double rho2, int nu);
 RcppExport SEXP _stdmatern_dmatern_copula_eigen(SEXP XSEXP, SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -204,15 +232,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // fold_data
-Eigen::VectorXd fold_data(const Eigen::VectorXd& X, int n1, int n2);
-RcppExport SEXP _stdmatern_fold_data(SEXP XSEXP, SEXP n1SEXP, SEXP n2SEXP) {
+Eigen::VectorXd fold_data(const Eigen::VectorXd& X, int dim1, int dim2);
+RcppExport SEXP _stdmatern_fold_data(SEXP XSEXP, SEXP dim1SEXP, SEXP dim2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< int >::type n1(n1SEXP);
-    Rcpp::traits::input_parameter< int >::type n2(n2SEXP);
-    rcpp_result_gen = Rcpp::wrap(fold_data(X, n1, n2));
+    Rcpp::traits::input_parameter< int >::type dim1(dim1SEXP);
+    Rcpp::traits::input_parameter< int >::type dim2(dim2SEXP);
+    rcpp_result_gen = Rcpp::wrap(fold_data(X, dim1, dim2));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -288,6 +316,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_stdmatern_matrix_vector_product", (DL_FUNC) &_stdmatern_matrix_vector_product, 2},
     {"_stdmatern_make_matern_prec_matrix", (DL_FUNC) &_stdmatern_make_matern_prec_matrix, 5},
     {"_stdmatern_dmatern_cholesky", (DL_FUNC) &_stdmatern_dmatern_cholesky, 6},
+    {"_stdmatern_marginal_sd_cholesky", (DL_FUNC) &_stdmatern_marginal_sd_cholesky, 2},
+    {"_stdmatern_dmatern_copula_cholesky", (DL_FUNC) &_stdmatern_dmatern_copula_cholesky, 6},
     {"_stdmatern_dmatern_copula_circulant", (DL_FUNC) &_stdmatern_dmatern_copula_circulant, 6},
     {"_stdmatern_rmatern_copula_circulant", (DL_FUNC) &_stdmatern_rmatern_copula_circulant, 6},
     {"_stdmatern_construct_circulant_precision", (DL_FUNC) &_stdmatern_construct_circulant_precision, 5},
