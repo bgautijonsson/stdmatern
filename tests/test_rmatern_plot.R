@@ -16,15 +16,15 @@ tibble(
   eigen = as.numeric(eigen),
   folded = as.numeric(folded),
   circulant = as.numeric(circulant)
-) |> 
-  pivot_longer(c(everything())) |> 
+) |>
+  pivot_longer(c(everything())) |>
   mutate(
     id = row_number(),
     lat = rep(seq_len(dim1), each = dim2),
     lon = rep(seq_len(dim2), times = dim1),
     value = (value - mean(value)) / sd(value),
     .by = name
-  ) |> 
+  ) |>
   ggplot(aes(lat, lon, fill = value)) +
   geom_raster() +
   scale_fill_viridis_c() +

@@ -1,14 +1,15 @@
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # stdmatern
 
 This directory is for development of fast and memory-efficient code that
 creates Matérn precision matrices that have been standardized so that
-their inverse is a correlation matrix. The code is written in C++ and
-made available inside R with the `{Rcpp}` packages.
+their inverse is a correlation matrix. The methods used in this code are
+described in [a paper I am working
+on](https://bggj.is/materneigenpaper/).
 
-The package can be installed with
+The package is still in very active development and should not be
+considered a stable product yet. The package can be installed with
 
 ``` r
 pak::pak("bgautijonsson/stdmatern")
@@ -16,94 +17,36 @@ pak::pak("bgautijonsson/stdmatern")
 
 ``` r
 library(stdmatern)
-#> Loading required package: Matrix
 ```
 
-``` r
-Q <- make_standardized_matern(dim = 3, rho = 0.5, nu = 0)
-```
-
-``` r
-Q
-#> 9 x 9 sparse Matrix of class "dgCMatrix"
-#>                                                                                
-#>  [1,]  1.155093 -0.2808520  .        -0.2808520  .          .          .       
-#>  [2,] -0.280852  1.2291667 -0.280852  .         -0.2661131  .          .       
-#>  [3,]  .        -0.2808520  1.155093  .          .         -0.2808520  .       
-#>  [4,] -0.280852  .          .         1.2291667 -0.2661131  .         -0.280852
-#>  [5,]  .        -0.2661131  .        -0.2661131  1.2962963 -0.2661131  .       
-#>  [6,]  .         .         -0.280852  .         -0.2661131  1.2291667  .       
-#>  [7,]  .         .          .        -0.2808520  .          .          1.155093
-#>  [8,]  .         .          .         .         -0.2661131  .         -0.280852
-#>  [9,]  .         .          .         .          .         -0.2808520  .       
-#>                           
-#>  [1,]  .          .       
-#>  [2,]  .          .       
-#>  [3,]  .          .       
-#>  [4,]  .          .       
-#>  [5,] -0.2661131  .       
-#>  [6,]  .         -0.280852
-#>  [7,] -0.2808520  .       
-#>  [8,]  1.2291667 -0.280852
-#>  [9,] -0.2808520  1.155093
-```
-
-``` r
-Q |> solve()
-#> 9 x 9 sparse Matrix of class "dgCMatrix"
-#>                                                                       
-#>  [1,] 1.00000000 0.27611088 0.08016032 0.27611088 0.1353601 0.05357375
-#>  [2,] 0.27611088 1.00000000 0.27611088 0.13559322 0.2783556 0.13559322
-#>  [3,] 0.08016032 0.27611088 1.00000000 0.05357375 0.1353601 0.27611088
-#>  [4,] 0.27611088 0.13559322 0.05357375 1.00000000 0.2783556 0.08474576
-#>  [5,] 0.13536011 0.27835560 0.13536011 0.27835560 1.0000000 0.27835560
-#>  [6,] 0.05357375 0.13559322 0.27611088 0.08474576 0.2783556 1.00000000
-#>  [7,] 0.08016032 0.05357375 0.02605210 0.27611088 0.1353601 0.05357375
-#>  [8,] 0.05357375 0.08474576 0.05357375 0.13559322 0.2783556 0.13559322
-#>  [9,] 0.02605210 0.05357375 0.08016032 0.05357375 0.1353601 0.27611088
-#>                                       
-#>  [1,] 0.08016032 0.05357375 0.02605210
-#>  [2,] 0.05357375 0.08474576 0.05357375
-#>  [3,] 0.02605210 0.05357375 0.08016032
-#>  [4,] 0.27611088 0.13559322 0.05357375
-#>  [5,] 0.13536011 0.27835560 0.13536011
-#>  [6,] 0.05357375 0.13559322 0.27611088
-#>  [7,] 1.00000000 0.27611088 0.08016032
-#>  [8,] 0.27611088 1.00000000 0.27611088
-#>  [9,] 0.08016032 0.27611088 1.00000000
-```
-
-Creating and standardizing a 1600x1600 precision matrix
-
-``` r
-bench::mark(
-  make_standardized_matern(dim = 40, rho = 0.5, nu = 0)
-)
-#> # A tibble: 1 × 6
-#>   expression                             min median `itr/sec` mem_alloc `gc/sec`
-#>   <bch:expr>                           <bch> <bch:>     <dbl> <bch:byt>    <dbl>
-#> 1 make_standardized_matern(dim = 40, … 1.3ms 1.36ms      709.    98.3KB        0
-```
+    Loading required package: Matrix
 
 # Sampling spatial data
 
-Here we sample highly dependent spatial data on a 100x100 grid,
-i.e. there’s 10.000 observational locations.
+Here we sample 50 replicates of highly dependent spatial data on a
+200x100 grid, i.e. there’s 20.000 observational locations.
 
 ``` r
 start <- tictoc::tic()
-grid_dim <- 100
-rho <- 0.9
+dim1 <- 200
+dim2 <- 100
+rho1 <- 0.6
+rho2 <- 0.9
 nu <- 2
-Z <- rmatern_copula(1, grid_dim, rho, nu)
+n_obs <- 50
+Z <- rmatern_copula_eigen(n_obs, dim1, dim2, rho1, rho2, nu)
+stop <- tictoc::toc()
+```
 
+    2.094 sec elapsed
+
+``` r
 tibble(
-  Z = as.numeric(Z)
+  Z = as.numeric(Z[, 1])
 ) |> 
   mutate(
-    id = row_number(),
-    lat = (id - 1) %% grid_dim,
-    lon = cumsum(lat == 0),
+    lat = rep(seq_len(dim1), each = dim2),
+    lon = rep(seq_len(dim2), times = dim1),
   ) |> 
   ggplot(aes(lat, lon, fill = Z)) +
   geom_raster() +
@@ -111,90 +54,130 @@ tibble(
   coord_fixed(expand = FALSE)
 ```
 
-<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
+![](README_files/figure-commonmark/unnamed-chunk-4-1.png)
 
 ``` r
-stop <- tictoc::toc()
-#> 0.209 sec elapsed
+stop$callback_msg
 ```
+
+    [1] "2.094 sec elapsed"
+
+On the plots below, the distribution of sample statistics are shown in
+black while the theoretical distributions of standard normal variables
+is shown in red.
+
+``` r
+Z  |> apply(1, mean) |> density() |> plot()
+curve(dnorm(x, 0, 1 / sqrt(n_obs)), add = TRUE, from = -0.5, to = 0.5, col = "red")
+```
+
+![](README_files/figure-commonmark/unnamed-chunk-5-1.png)
+
+``` r
+apply(Z, 1, var) |> density() |> plot()
+curve((n_obs - 1) * dchisq((n_obs - 1) * x, df = (n_obs - 1)), col = "red", from = 0, to = 5, add = TRUE)
+```
+
+![](README_files/figure-commonmark/unnamed-chunk-6-1.png)
 
 # Normal density
 
-The package also implements a method for calculating the log-density of
-a multivariate normal with appropriate precision matrix. The function
-avoids creating the precision matrix Q by using known results about
-kroncker sums and eigendecompositions. This causes the density
-evaluation to be blazingly fast, even for very large spatial fields.
+The package implements a method for calculating the log-density of a
+multivariate normal with appropriate precision matrix, defined as
 
-The package also contains functions for sampling from and calculating
-densities for regular Matérn-like fields where the marginal variances
-don’t have to be equal to one. Those functions are even faster than the
-copula versions.
+$$
+\mathbf{Q} = \left( \mathbf{Q}_{\rho_1} \otimes \mathbf{I_{n_2}} + \mathbf{I_{n_1}} \otimes \mathbf{Q}_{\rho_2} \right)^{\nu + 1}, \quad \nu \in \{0, 1, 2\},
+$$
+
+where $\nu$ is a smoothness parameter, $\otimes$ is the Kronecker
+product and each $Q_\rho$ is a precision matrix corresponding to a
+one-dimensional AR(1) process with unit marginal variance.
+
+To evaluate the density of the random sample generated above we would
+run:
 
 ``` r
-library(purrr)
-library(glue)
-library(tinytable)
-library(tidyr)
-#> 
-#> Attaching package: 'tidyr'
-#> The following objects are masked from 'package:Matrix':
-#> 
-#>     expand, pack, unpack
+tictoc::tic()
+dens <- dmatern_copula_eigen(Z, dim1, dim2, rho1, rho2, nu) |> sum()
+tictoc::toc()
 ```
 
-``` r
+    0.62 sec elapsed
 
+## Folded Circulant Approximation
+
+The package also provides a circulant approximation to the precision
+matrix, $\mathbf Q$, with reflective boundary conditions. This lets us
+do fast computations because of the FFT. This package uses the [FFTW C
+library](https://www.fftw.org/) for FFT computations, and the [Eigen C++
+library](https://eigen.tuxfamily.org/index.php?title=Main_Page) for more
+general computations.
+
+``` r
+tictoc::tic()
+dens <- dmatern_copula_folded(Z, dim1, dim2, rho1, rho2, nu) |> sum()
+tictoc::toc()
+```
+
+    0.071 sec elapsed
+
+# Benchmarks
+
+The following section contains a simple benchmark to compare the
+computation times of the exact method and the folded approximation. For
+further benchmarks, see the working paper linked above.
+
+``` r
 my_fun <- function(dim) {
-  x_copula <- rmatern_copula(1, dim, 0.5, 0)
-  x <- rmatern(1, dim, 0.5, 0)
+  X <- rmatern_copula_eigen(1, dim, dim, rho, rho, nu)
   bench::mark(
-    "Copula" = dmatern_copula(x, dim, 0.5, 0),
-    "Regular" = dmatern(x, dim, 0.5, 0),
+    "Eigen" = dmatern_copula_eigen(X, dim, dim, rho, rho, nu),
+    "Folded" = dmatern_copula_folded(X, dim, dim, rho, rho, nu),
     filter_gc = FALSE,
-    iterations = 10,
+    iterations = 20,
     check = FALSE
-  ) |> 
+  ) |>
     mutate(
       dim = dim
     )
 }
-
-results <- map(seq(10, 200, by = 10), my_fun)
-
-
-results |> 
-  list_rbind() |> 
-  select(Q_size = dim, type = expression, time = median, memory = mem_alloc) |> 
-  mutate(
-    Q_size = glue("{Q_size^2}x{Q_size^2}"),
-    type = as.character(type),
-    time = as.character(time)
-  ) |> 
-  select(-memory) |> 
-  pivot_wider(names_from = type, values_from = time) |> 
-  tt()
 ```
 
-| Q_size      | Copula   | Regular  |
-|-------------|----------|----------|
-| 100x100     | 103.55µs | 94.71µs  |
-| 400x400     | 226.94µs | 115.39µs |
-| 900x900     | 701.98µs | 191.06µs |
-| 1600x1600   | 1.84ms   | 407.64µs |
-| 2500x2500   | 4.17ms   | 769.35µs |
-| 3600x3600   | 8.45ms   | 1.48ms   |
-| 4900x4900   | 17.1ms   | 2.52ms   |
-| 6400x6400   | 29.95ms  | 3.91ms   |
-| 8100x8100   | 50.48ms  | 14.15ms  |
-| 10000x10000 | 77.45ms  | 8.47ms   |
-| 12100x12100 | 99.32ms  | 11.99ms  |
-| 14400x14400 | 138.19ms | 17.57ms  |
-| 16900x16900 | 182.92ms | 24.35ms  |
-| 19600x19600 | 237.26ms | 27.68ms  |
-| 22500x22500 | 302.48ms | 40.63ms  |
-| 25600x25600 | 407.55ms | 44.19ms  |
-| 28900x28900 | 538.36ms | 58.09ms  |
-| 32400x32400 | 654.52ms | 77.96ms  |
-| 36100x36100 | 788.99ms | 89.31ms  |
-| 40000x40000 | 1.03s    | 118.81ms |
+``` r
+rho <- 0.5
+nu <- 2
+results <- purrr::map(
+  c(seq(20, 240, by = 20)),
+  my_fun
+) |> purrr::list_rbind()
+```
+
+``` r
+results |> 
+  mutate(
+    dim = glue::glue("{dim}x{dim}"),
+    expression = as.character(expression)
+  )  |> 
+  select(
+    Grid = dim, expression, median
+  ) |> 
+  tidyr::pivot_wider(names_from = expression, values_from = median)
+```
+
+    # A tibble: 12 × 3
+       Grid    dmatern_copula_eigen(X, dim, dim, rho, rho, …¹ dmatern_copula_folde…²
+       <glue>  <bench_tm>                                     <bench_tm>            
+     1 20x20   0.000244565                                    0.0001152511          
+     2 40x40   0.001670340                                    0.0002810345          
+     3 60x60   0.007151035                                    0.0005678089          
+     4 80x80   0.022252832                                    0.0011894921          
+     5 100x100 0.051037436                                    0.0016876420          
+     6 120x120 0.088788534                                    0.0025653904          
+     7 140x140 0.156584720                                    0.0038019300          
+     8 160x160 0.297652354                                    0.0054231521          
+     9 180x180 0.418930067                                    0.0070010575          
+    10 200x200 0.596900140                                    0.0077483030          
+    11 220x220 0.892151616                                    0.0136930775          
+    12 240x240 1.358173770                                    0.0148482526          
+    # ℹ abbreviated names: ¹​`dmatern_copula_eigen(X, dim, dim, rho, rho, nu)`,
+    #   ²​`dmatern_copula_folded(X, dim, dim, rho, rho, nu)`

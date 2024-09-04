@@ -14,37 +14,40 @@ using namespace Eigen;
 Eigen::VectorXd dmatern_eigen(const Eigen::MatrixXd& X, int dim_x, int dim_y, double rho1, double rho2, int nu) {
     int n_obs = X.cols();
     int N = dim_x * dim_y;
-    Eigen::VectorXd quadform_sums = Eigen::VectorXd::Zero(n_obs);
+    ArrayXd quadform_sums = ArrayXd::Zero(n_obs);
     const double C = N * std::log(2 * M_PI);
 
     // Create precision matrices
-    Eigen::MatrixXd Q1 = make_AR_prec_matrix(dim_x, rho1);
-    Eigen::MatrixXd Q2 = make_AR_prec_matrix(dim_y, rho2);
+    SparseMatrix<double> Q1 = make_AR_prec_matrix(dim_x, rho1);
+    SparseMatrix<double> Q2 = make_AR_prec_matrix(dim_y, rho2);
 
     // Perform eigendecompositions
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver1(Q1);
-    Eigen::VectorXd A1 = solver1.eigenvalues();
-    Eigen::MatrixXd V1 = solver1.eigenvectors();
+    SelfAdjointEigenSolver<SparseMatrix<double>> solver1(Q1);
+    VectorXd A1 = solver1.eigenvalues();
+    MatrixXd V1 = solver1.eigenvectors();
 
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver2(Q2);
-    Eigen::VectorXd A2 = solver2.eigenvalues();
-    Eigen::MatrixXd V2 = solver2.eigenvectors();
+    SelfAdjointEigenSolver<SparseMatrix<double>> solver2(Q2);
+    VectorXd A2 = solver2.eigenvalues();
+    MatrixXd V2 = solver2.eigenvectors();
 
 
     double log_det = 0;
 
     #pragma omp parallel
     {
-        Eigen::VectorXd local_quadform_sums = Eigen::VectorXd::Zero(n_obs);
+        ArrayXd local_quadform_sums = ArrayXd::Zero(n_obs);
+        VectorXd v(N);
+        VectorXd u(N);
+        double lambda;
 
         #pragma omp for reduction(+:log_det)
         for (int i = 0; i < dim_x; ++i) {
             for (int j = 0; j < dim_y; ++j) {
                 // First calculate the Kronecker product
-                Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(i), V2.col(j));
+                v = kroneckerProduct(V1.col(i), V2.col(j));
                 
                 // Compute the eigenvalue
-                double lambda = std::pow(A1(i) + A2(j), nu + 1);
+                lambda = std::pow(A1(i) + A2(j), nu + 1);
 
                 log_det += std::log(lambda);
                 
@@ -62,7 +65,7 @@ Eigen::VectorXd dmatern_eigen(const Eigen::MatrixXd& X, int dim_x, int dim_y, do
         }
     }
 
-    Eigen::VectorXd log_densities = -0.5 * (C - log_det + quadform_sums.array());
+    ArrayXd log_densities = -0.5 * (C - log_det + quadform_sums);
 
     return log_densities;
 }
@@ -70,21 +73,21 @@ Eigen::VectorXd dmatern_eigen(const Eigen::MatrixXd& X, int dim_x, int dim_y, do
 // [[Rcpp::export]]
 Eigen::MatrixXd rmatern_eigen(int n, int dim_x, int dim_y, double rho1, double rho2, int nu) {
     // Step 1: Create 1D AR(1) precision matrices
-    Eigen::SparseMatrix<double> Q1 = make_AR_prec_matrix(dim_x, rho1);
-    Eigen::SparseMatrix<double> Q2 = make_AR_prec_matrix(dim_y, rho2);
+    SparseMatrix<double> Q1 = make_AR_prec_matrix(dim_x, rho1);
+    SparseMatrix<double> Q2 = make_AR_prec_matrix(dim_y, rho2);
     
     // Step 2: Perform eigendecomposition of Q1 and Q2
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver1(Q1);
-    Eigen::VectorXd A1 = solver1.eigenvalues();
-    Eigen::MatrixXd V1 = solver1.eigenvectors();
+    SelfAdjointEigenSolver<SparseMatrix<double>> solver1(Q1);
+    VectorXd A1 = solver1.eigenvalues();
+    MatrixXd V1 = solver1.eigenvectors();
 
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver2(Q2);
-    Eigen::VectorXd A2 = solver2.eigenvalues();
-    Eigen::MatrixXd V2 = solver2.eigenvectors();
+    SelfAdjointEigenSolver<SparseMatrix<double>> solver2(Q2);
+    VectorXd A2 = solver2.eigenvalues();
+    MatrixXd V2 = solver2.eigenvectors();
 
     // Step 3: Prepare for sampling
     int D = dim_x * dim_y;
-    Eigen::MatrixXd samples(D, n);
+    MatrixXd samples = MatrixXd::Zero(D, n);
 
     // Random number generation
     std::vector<std::mt19937> generators(omp_get_max_threads());
@@ -95,20 +98,28 @@ Eigen::MatrixXd rmatern_eigen(int n, int dim_x, int dim_y, double rho1, double r
     std::normal_distribution<> d(0, 1);
 
     // Step 5: Generate samples
-    #pragma omp parallel for
-    for (int s = 0; s < n; ++s) {
+    #pragma omp parallel
+    {
         int thread_id = omp_get_thread_num();
-        Eigen::VectorXd x = Eigen::VectorXd::Zero(D);
+        MatrixXd local_samples = MatrixXd::Zero(D, n);
+        VectorXd v(D);
 
+        #pragma omp for collapse(2) nowait
         for (int i = 0; i < dim_x; ++i) {
             for (int j = 0; j < dim_y; ++j) {
-                Eigen::VectorXd v = Eigen::kroneckerProduct(V1.col(i), V2.col(j));
                 double lambda = std::pow(A1(i) + A2(j), -(nu + 1.0) / 2.0);
-                x += lambda * d(generators[thread_id]) * v;
+                v = kroneckerProduct(V1.col(i), V2.col(j));
+                
+                for (int s = 0; s < n; ++s) {
+                    local_samples.col(s) += lambda * d(generators[thread_id]) * v;
+                }
             }
         }
 
-        samples.col(s) = x;
+        #pragma omp critical
+        {
+            samples += local_samples;
+        }
     }
 
     return samples;

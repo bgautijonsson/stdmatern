@@ -5,7 +5,6 @@ library(scales)
 library(ggh4x)
 theme_set(bggjphd::theme_bggj())
 
-
 test_fun <- function(dim1, dim2, rho1, rho2, nu) {
   X <- rmatern_copula_eigen(n, dim1, dim2, rho1, rho2, nu)
 
@@ -24,7 +23,7 @@ test_fun <- function(dim1, dim2, rho1, rho2, nu) {
     },
     interval = c(0, 1)
   )$minimum
-  circulant_time <- (Sys.time() - start) -  folded_time
+  circulant_time <- (Sys.time() - start) - folded_time
 
   eigen <- optimize(
     function(par) {
@@ -46,7 +45,7 @@ test_fun <- function(dim1, dim2, rho1, rho2, nu) {
   ) |>
     pivot_longer(c(-par), names_to = "model") |>
     pivot_wider(names_from = par) |>
-    rename(rho_hat = rho) |> 
+    rename(rho_hat = rho) |>
     arrange(model) |>
     mutate(
       time = as.numeric(c(circulant_time, eigen_time, folded_time))
@@ -56,7 +55,7 @@ test_fun <- function(dim1, dim2, rho1, rho2, nu) {
 i <- 0
 
 d <- crossing(
-  dim = c(10, 20, 30),
+  dim = c(10, 20, 30, 40, 50, 60, 70, 80),
   nu = c(0, 1, 2),
   rho = c(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95),
   replicate = 1:5
@@ -81,7 +80,7 @@ circulant_color <- "#969696"
 folded_color <- "#4daf4a"
 
 d |>
-  filter(dim %in% c(10, 20, 40, 80)) |> 
+  filter(dim %in% c(10, 20, 40, 80)) |>
   mutate(
     grid_size = glue::glue("{dim} x {dim}"),
     model = fct_recode(
@@ -89,7 +88,7 @@ d |>
       "Exact" = "eigen",
       "Circulant" = "circulant",
       "Folded" = "folded"
-    ) |> 
+    ) |>
       fct_relevel("Exact")
   ) |>
   ggplot(aes(rho, rho_hat - rho)) +
@@ -139,42 +138,42 @@ ggsave(
 )
 
 
-d |> 
+d |>
   mutate(
     model = fct_recode(
       model,
       "Exact" = "eigen",
       "Circulant" = "circulant",
       "Folded" = "folded"
-    ) |> 
+    ) |>
       fct_relevel("Exact")
-  ) |> 
+  ) |>
   ggplot(aes(dim, time)) +
   geom_smooth(aes(col = model, fill = model)) +
-    scale_x_continuous(
-      guide = guide_axis_truncated(),
-      breaks = breaks_extended(8),
-      labels = \(x) glue::glue("{x}x{x}")
-    ) +
-    scale_y_continuous(
-      guide = guide_axis_truncated(),
-      labels = label_timespan(),
-      breaks = breaks_extended(10)
-    ) +
-    scale_colour_manual(
-      values = c(
-        exact_color,
-        circulant_color,
-        folded_color
-      )
-    ) +
-    scale_fill_manual(
-      values = c(
-        exact_color,
-        circulant_color,
-        folded_color
-      )
-    ) +
+  scale_x_continuous(
+    guide = guide_axis_truncated(),
+    breaks = breaks_extended(8),
+    labels = \(x) glue::glue("{x}x{x}")
+  ) +
+  scale_y_continuous(
+    guide = guide_axis_truncated(),
+    labels = label_timespan(),
+    breaks = breaks_extended(10)
+  ) +
+  scale_colour_manual(
+    values = c(
+      exact_color,
+      circulant_color,
+      folded_color
+    )
+  ) +
+  scale_fill_manual(
+    values = c(
+      exact_color,
+      circulant_color,
+      folded_color
+    )
+  ) +
   labs(
     col = NULL,
     fill = NULL,
@@ -189,40 +188,82 @@ d |>
     legend.direction = "horizontal"
   )
 
-  ggsave(
-    "bench_ml_speed.png",
-    scale = 1.3, width = 8, height = 0.621 * 8
-  )
-  
+ggsave(
+  "bench_ml_speed.png",
+  scale = 1.3, width = 8, height = 0.621 * 8
+)
 
-d |> 
+
+d |>
   mutate(
     model = fct_recode(
       model,
       "Exact" = "eigen",
       "Circulant" = "circulant",
       "Folded" = "folded"
-    ) |> 
+    ) |>
       fct_relevel("Exact")
-  ) |> 
+  ) |>
   summarise(
     median = median(time),
     .by = c(model, dim)
-  ) |> 
-  pivot_wider(names_from = model, values_from = median) |> 
-  select(dim, Exact, Folded, Circulant) |> 
+  ) |>
+  pivot_wider(names_from = model, values_from = median) |>
+  select(dim, Exact, Folded, Circulant) |>
   mutate(
     dim = glue::glue("{dim} x {dim}"),
     d_1 = Exact / Folded,
     d_2 = Exact / Circulant
-  ) |> 
+  ) |>
   mutate_at(
     vars(Exact, Folded, Circulant),
     bench::as_bench_time
-  ) |> 
+  ) |>
   mutate_at(
     vars(d_1, d_2),
-    \(x) as.numeric(x) |> round(2) |> paste0("x"),
-  ) |> 
-  select(dim, Exact, Folded, d_1, Circulant, d_2) 
+    \(x) as.numeric(x) |>
+      round(2) |>
+      paste0("x"),
+  ) |>
+  select(dim, Exact, Folded, d_1, Circulant, d_2) |>
   write_csv("ml_bench_speed.csv")
+
+
+dim1 <- 50
+dim2 <- 50
+rho1 <- 0.9
+rho2 <- 0.5
+nu <- 1
+n_obs <- 5
+Z <- rmatern_copula_eigen(n_obs, dim1, dim2, rho1, rho2, nu)
+U <- pnorm(Z)
+Y <- evd::qgev(U, loc = 6, scale = 2, shape = 0.1)
+
+log_lik <- function(par, Y) {
+  mu <- exp(par[1])
+  sigma <- exp(par[2] + par[1])
+  xi <- exp(par[3])
+  rho1 <- plogis(par[4])
+  rho2 <- plogis(par[5])
+
+  ll_marg <- -sum(evd::dgev(Y, loc = mu, scale = sigma, shape = xi, log = TRUE))
+  u <- evd::pgev(Y, loc = mu, scale = sigma, shape = xi)
+  z <- qnorm(u)
+  ll_copula <- -sum(dmatern_copula_eigen(z, dim1, dim2, rho1, rho2, nu))
+  ll_copula + ll_marg
+}
+
+
+res <- optim(
+  par = c(0, 0, 0, 0, 0),
+  log_lik,
+  control = list(maxit = 1000),
+  Y = Y
+)
+
+
+(mu <- exp(res$par[1]))
+(sigma <- exp(res$par[2] + res$par[1]))
+(xi <- exp(res$par[3]))
+(rho1 <- plogis(res$par[4]))
+(rho2 <- plogis(res$par[5]))

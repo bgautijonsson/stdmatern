@@ -27,16 +27,16 @@ my_fun <- function(dim) {
 
 
 results <- map(
-  c(seq(10, 200, by = 10)),
+  c(seq(20, 240, by = 20)),
   my_fun,
   .progress = TRUE
 )
 
 results |>
   list_rbind() |>
-  select(Q_size = dim, Type = expression, time = median, memory = mem_alloc) |>
+  select(Grid = dim, Type = expression, time = median, memory = mem_alloc) |>
   mutate(
-    Q_size = glue("{Q_size^2}x{Q_size^2}")
+    Grid = glue("{Grid}x{Grid}")
   ) |>
   select(-memory) |>
   pivot_wider(names_from = Type, values_from = time) |>
@@ -50,26 +50,27 @@ results |>
     \(x) scales::percent(x, accuracy = 0.1, decimal_mark = ".", big.mark = ",")
   ) |>
   select(
-    Q_size,
+    Grid,
     "Cholesky (Unscaled)",
     "Eigen (Unscaled)",
     sp_3,
-    Eigen,
+    eig = Eigen,
     circ = Circulant,
     sp_1,
     fol = Folded,
     sp_2
-  )
-# write_csv("benchmark_all.csv")
-gt() |>
+  ) |>
+  # write_csv("benchmark_all.csv")
+  gt() |>
   cols_label(
     `Cholesky (Unscaled)` = "Cholesky",
-    `Eigen (Unscaled)` = "Eigen",
-    sp_3 = "Speed-up",
+    `Eigen (Unscaled)` = "Time",
+    sp_3 = "Relative",
+    eig = "Eigen",
     circ = "Time",
-    sp_1 = "Speed-Up",
+    sp_1 = "Relative",
     fol = "Time",
-    sp_2 = "Speed-Up"
+    sp_2 = "Relative"
   ) |>
   tab_spanner(
     label = "Circulant",
@@ -78,6 +79,10 @@ gt() |>
   tab_spanner(
     label = "Folded",
     columns = 8:9
+  ) |>
+  tab_spanner(
+    label = "Eigen",
+    columns = 3:4
   ) |>
   tab_spanner(
     label = "Unscaled",

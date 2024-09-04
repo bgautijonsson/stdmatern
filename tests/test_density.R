@@ -4,8 +4,8 @@ dim1 <- 40
 dim2 <- 40
 rho1 <- 0.5
 rho2 <- 0.3
-nu <- 0
-n <- 80
+nu <- 2
+n <- 10
 
 Z <- rmatern_copula_eigen(n, dim1, dim2, rho1, rho2, nu)
 
@@ -16,5 +16,3 @@ tibble(
   folded = dmatern_copula_folded(Z, dim1, dim2, rho1, rho2, nu)
 ) |>
   cor()
-
-

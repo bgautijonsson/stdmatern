@@ -3,8 +3,8 @@ Type: Package
 Title: A package for performing computations on spatial fields with Matern correlation structure
 Version: 0.2.0
 Date: 2024-08-26
-Author: Brynjólfur Gauti Guðrúnar Jónsson
-Maintainer: Brynjólfur Gauti Guðrúnar Jónsson <brynjolfur@hi.is>
+Author: Brynjolfur Gauti Gudrunar Jonsson
+Maintainer: Brynjolfur Gauti Gudrunar Jonsson <brynjolfur@hi.is>
 Description: This package was developed to quickly and easily perform computations on spatial fields with Matern correlation structure
 License: GPL (>= 2)
 Imports: Rcpp, RcppEigen

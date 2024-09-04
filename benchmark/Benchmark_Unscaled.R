@@ -20,29 +20,29 @@ my_fun <- function(dim, nu) {
     filter_gc = FALSE,
     iterations = 20,
     check = FALSE
-  ) 
+  )
 }
 
 results <- crossing(
-  dim = seq(10, 200, by = 10),
+  dim = seq(10, 100, by = 10),
   nu = 0:2
-) |> 
+) |>
   mutate(
     results = map2(dim, nu, my_fun)
   )
 
-results |> 
-  unnest(results) |> 
+results |>
+  unnest(results) |>
   mutate(
     expression = as.character(expression),
     nu = factor(nu),
     median = as.numeric(median)
-  ) |> 
-  select(dim, nu, expression, median) |>  
-  pivot_wider(names_from = expression, values_from = median) |> 
+  ) |>
+  select(dim, nu, expression, median) |>
+  pivot_wider(names_from = expression, values_from = median) |>
   mutate(
     diff = eig / chol
-  ) |> 
+  ) |>
   ggplot(aes(dim, diff, col = nu)) +
   geom_hline(yintercept = 1, lty = 2) +
   geom_line() +
@@ -81,93 +81,93 @@ results |>
     plot.margin = margin(5, 25, 5, 5)
   )
 
-  results |> 
-    unnest(results) |> 
-    mutate(
-      expression = as.character(expression) |> 
-        fct_recode(
-          "Cholesky" = "chol",
-          "Eigen" = "eig"
-        ),
-      nu = factor(nu),
-      median = as.numeric(median)
-    ) |> 
-    select(dim, nu, expression, median) |> 
-    ggplot(aes(dim, median)) +
-    geom_line(aes(lty = expression, group = paste(expression, nu))) +
-    geom_textline(
-      data = ~filter(.x, nu == 0),
-      aes(label = expression, group = expression, hjust = expression, lty = expression),
-      vjust = -0.2,
-      text_only = TRUE,
-      size = 6
-    ) +
-    scale_x_continuous(
-      breaks = c(10, 50, 100, 150, 200),
-      labels = function(x) glue("{x^2} x {x^2}"),
-      guide = guide_axis_truncated()
-    ) +
-    scale_y_continuous(
-      labels = label_timespan(),
-      breaks = breaks_extended(10),
-      guide = guide_axis_truncated()
-    ) +
-    scale_linetype_discrete(
-      guide = "none"
-    ) +
-    scale_hjust_manual(
-      values = c(0.8, 0.8)
-    ) +
-    labs(
-      title = "Benchmarking density evaluations",
-      x = "Size of Q",
-      y = NULL,
-      col = expression(nu),
-      lty = NULL
-    ) +
-    theme(
-      legend.position.inside = c(0.5, 0.8),
-      plot.margin = margin(5, 25, 5, 5)
-    )
+results |>
+  unnest(results) |>
+  mutate(
+    expression = as.character(expression) |>
+      fct_recode(
+        "Cholesky" = "chol",
+        "Eigen" = "eig"
+      ),
+    nu = factor(nu),
+    median = as.numeric(median)
+  ) |>
+  select(dim, nu, expression, median) |>
+  ggplot(aes(dim, median)) +
+  geom_line(aes(lty = expression, group = paste(expression, nu))) +
+  geom_textline(
+    data = ~ filter(.x, nu == 0),
+    aes(label = expression, group = expression, hjust = expression, lty = expression),
+    vjust = -0.2,
+    text_only = TRUE,
+    size = 6
+  ) +
+  scale_x_continuous(
+    breaks = c(10, 50, 100, 150, 200),
+    labels = function(x) glue("{x^2} x {x^2}"),
+    guide = guide_axis_truncated()
+  ) +
+  scale_y_continuous(
+    labels = label_timespan(),
+    breaks = breaks_extended(10),
+    guide = guide_axis_truncated()
+  ) +
+  scale_linetype_discrete(
+    guide = "none"
+  ) +
+  scale_hjust_manual(
+    values = c(0.8, 0.8)
+  ) +
+  labs(
+    title = "Benchmarking density evaluations",
+    x = "Size of Q",
+    y = NULL,
+    col = expression(nu),
+    lty = NULL
+  ) +
+  theme(
+    legend.position.inside = c(0.5, 0.8),
+    plot.margin = margin(5, 25, 5, 5)
+  )
 
 ggsave(
   "unscaled_benchmark.png",
   scale = 0.9, width = 8, height = 8
 )
 
-results |> 
-  unnest(results) |> 
+results |>
+  unnest(results) |>
   mutate(
     expression = as.character(expression)
-  ) |> 
-  filter(nu == 0) |> 
-  select(dim, expression, median) |> 
-  pivot_wider(names_from = expression, values_from = median) |> 
+  ) |>
+  filter(nu == 0) |>
+  select(dim, expression, median) |>
+  pivot_wider(names_from = expression, values_from = median) |>
   mutate(
     diff = as.numeric(chol / eig) |> round(2) |> paste0("x"),
     dim = glue("{dim^2}x{dim^2}")
-  ) |> 
+  ) |>
   write_csv("unscaled_benchmark.csv")
 
-results |> 
-  unnest(results) |> 
+results |>
+  unnest(results) |>
   mutate(
     expression = as.character(expression)
-  ) |> 
-  filter(nu == 0) |> 
-  select(dim, expression, median) |> 
-  pivot_wider(names_from = expression, values_from = median) |> 
+  ) |>
+  filter(nu == 0) |>
+  select(dim, expression, median) |>
+  pivot_wider(names_from = expression, values_from = median) |>
   mutate(
     diff = as.numeric(chol / eig) |> round(2) |> paste0("x"),
     dim = glue("{dim^2}x{dim^2}")
-  ) |> 
-  gt() |> 
+  ) |>
+  gt() |>
   cols_label(
     dim = "Q-size",
     chol = "Cholesky",
     eig = "Eigen",
     diff = "Cholesky / Eigen"
-  ) |> 
+  ) |>
   tab_caption(
     md("Benchmarking how long it takes to evaluate the density of a Mátern($\\nu$)-like field with correlation parameter $\\rho$, unscaled version")
   )
