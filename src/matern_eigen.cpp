@@ -10,6 +10,7 @@
 using namespace Rcpp;
 using namespace Eigen;
 
+// Function to compute the log-density of a Matérn-like field using eigendecomposition
 // [[Rcpp::export]]
 Eigen::VectorXd dmatern_eigen(const Eigen::MatrixXd& X, int dim_x, int dim_y, double rho1, double rho2, int nu) {
     int n_obs = X.cols();
@@ -70,6 +71,7 @@ Eigen::VectorXd dmatern_eigen(const Eigen::MatrixXd& X, int dim_x, int dim_y, do
     return log_densities;
 }
 
+// Function to generate random samples from a Matérn-like field using eigendecomposition
 // [[Rcpp::export]]
 Eigen::MatrixXd rmatern_eigen(int n, int dim_x, int dim_y, double rho1, double rho2, int nu) {
     // Step 1: Create 1D AR(1) precision matrices

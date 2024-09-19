@@ -13,6 +13,9 @@ tibble(
   eigen = dmatern_copula_eigen(Z, dim1, dim2, rho1, rho2, nu),
   cholesky = dmatern_copula_cholesky(Z, dim1, dim2, rho1, rho2, nu),
   circulant = dmatern_copula_circulant(Z, dim1, dim2, rho1, rho2, nu),
-  folded = dmatern_copula_folded(Z, dim1, dim2, rho1, rho2, nu)
+  folded = dmatern_copula_folded(Z, dim1, dim2, rho1, rho2, nu),
+  eigen_unsc = dmatern_eigen(Z, dim1, dim2, rho1, rho2, nu),
+  cholesky_unsc = dmatern_cholesky(Z, dim1, dim2, rho1, rho2, nu)
 ) |>
-  cor()
+  cor() |>
+  round(3)
