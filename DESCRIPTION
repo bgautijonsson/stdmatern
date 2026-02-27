@@ -1,0 +1,19 @@
+Package: stdmatern
+Type: Package
+Title: A package for performing computations on spatial fields with Matern correlation structure
+Version: 0.2.0
+Date: 2024-08-26
+Author: Brynjolfur Gauti Gudrunar Jonsson
+Maintainer: Brynjolfur Gauti Gudrunar Jonsson <brynjolfur@hi.is>
+Description: This package was developed to quickly and easily perform computations on spatial fields with Matern correlation structure
+License: GPL (>= 2)
+Imports: Rcpp, RcppEigen, nloptr
+Depends: Matrix
+LinkingTo: 
+    Rcpp,
+    RcppEigen,
+    nloptr
+Suggests: testthat (>= 3.0.0)
+Config/testthat/edition: 3
+RoxygenNote: 7.3.2
+SystemRequirements: nlopt
