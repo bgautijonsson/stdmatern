@@ -1,4 +1,5 @@
 #include <RcppEigen.h>
+#include "rng_seed.h"
 #include <complex>
 #include <random>
 #include <fftw3.h>
@@ -36,7 +37,9 @@ Eigen::VectorXd dmatern_copula_circulant(const Eigen::MatrixXd& X, int dim1, int
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd rmatern_copula_circulant(int n_samples, int dim1, int dim2, double rho1, double rho2, int nu) {
+Eigen::MatrixXd rmatern_copula_circulant(int n_samples, int dim1, int dim2,
+                                         double rho1, double rho2, int nu,
+                                         Rcpp::Nullable<int> seed = R_NilValue) {
     Eigen::MatrixXd samples(dim1 * dim2, n_samples);
 
     // Step 1: Compute the (real) eigenvalues, Λ = √(nN) DFT2(θ)
@@ -45,9 +48,10 @@ Eigen::MatrixXd rmatern_copula_circulant(int n_samples, int dim1, int dim2, doub
     Eigen::MatrixXcd lambda_sqrt = eigs.array().sqrt().inverse();
 
     // Step 1: Sample z, where Re(z_ij) ~ N(0,1) and Im(z_ij) ~ N(0,1) iid
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::normal_distribution<> d(0, 1);
+    // Deterministic seeding -- see src/rng_seed.h (this sampler is serial, so
+    // one generator suffices; the eigen samplers seed per eigenpair instead).
+    std::mt19937 gen(static_cast<std::uint32_t>(stdmatern::seed_base(seed)));
+    std::normal_distribution<double> d(0.0, 1.0);
     Eigen::MatrixXcd z(dim2, dim1);
     double scale = 1.0 / std::sqrt(dim1 * dim2);
     

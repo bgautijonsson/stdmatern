@@ -36,15 +36,15 @@ dmatern <- function(X, dim, rho, nu) {
 }
 
 #' @export
-rmatern_copula <- function(n, dim, rho, nu) {
+rmatern_copula <- function(n, dim, rho, nu, seed = NULL) {
   p <- parse_dim_rho(dim, rho)
-  rmatern_copula_eigen(n, p$dim_x, p$dim_y, p$rho1, p$rho2, nu)
+  rmatern_copula_eigen(n, p$dim_x, p$dim_y, p$rho1, p$rho2, nu, seed)
 }
 
 #' @export
-rmatern <- function(n, dim, rho, nu) {
+rmatern <- function(n, dim, rho, nu, seed = NULL) {
   p <- parse_dim_rho(dim, rho)
-  rmatern_eigen(n, p$dim_x, p$dim_y, p$rho1, p$rho2, nu)
+  rmatern_eigen(n, p$dim_x, p$dim_y, p$rho1, p$rho2, nu, seed)
 }
 
 #' @export

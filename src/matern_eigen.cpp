@@ -2,6 +2,7 @@
 #include <omp.h>
 #include <random>
 #include "ar_matrix.h"
+#include "rng_seed.h"
 
 
 // [[Rcpp::depends(RcppEigen)]]
@@ -73,7 +74,9 @@ Eigen::VectorXd dmatern_eigen(const Eigen::MatrixXd& X, int dim_x, int dim_y, do
 
 // Function to generate random samples from a Matérn-like field using eigendecomposition
 // [[Rcpp::export]]
-Eigen::MatrixXd rmatern_eigen(int n, int dim_x, int dim_y, double rho1, double rho2, int nu) {
+Eigen::MatrixXd rmatern_eigen(int n, int dim_x, int dim_y, double rho1,
+                              double rho2, int nu,
+                              Rcpp::Nullable<int> seed = R_NilValue) {
     // Step 1: Create 1D AR(1) precision matrices
     SparseMatrix<double> Q1 = make_AR_prec_matrix(dim_x, rho1);
     SparseMatrix<double> Q2 = make_AR_prec_matrix(dim_y, rho2);
@@ -91,29 +94,26 @@ Eigen::MatrixXd rmatern_eigen(int n, int dim_x, int dim_y, double rho1, double r
     int D = dim_x * dim_y;
     MatrixXd samples = MatrixXd::Zero(D, n);
 
-    // Random number generation
-    std::vector<std::mt19937> generators(omp_get_max_threads());
-    for (auto& gen : generators) {
-        std::random_device rd;
-        gen.seed(rd());
-    }
-    std::normal_distribution<> d(0, 1);
+    // Deterministic per-eigenpair seeding -- see src/rng_seed.h
+    const std::uint64_t rng_base = stdmatern::seed_base(seed);
 
     // Step 5: Generate samples
     #pragma omp parallel
     {
-        int thread_id = omp_get_thread_num();
         MatrixXd local_samples = MatrixXd::Zero(D, n);
         VectorXd v(D);
 
         #pragma omp for collapse(2) nowait
         for (int i = 0; i < dim_x; ++i) {
             for (int j = 0; j < dim_y; ++j) {
+                std::mt19937 gen =
+                    stdmatern::pair_generator(rng_base, i, j, dim_y);
+                std::normal_distribution<double> d(0.0, 1.0);
                 double lambda = std::pow(A1(i) + A2(j), -(nu + 1.0) / 2.0);
                 v = kroneckerProduct(V1.col(i), V2.col(j));
                 
                 for (int s = 0; s < n; ++s) {
-                    local_samples.col(s) += lambda * d(generators[thread_id]) * v;
+                    local_samples.col(s) += lambda * d(gen) * v;
                 }
             }
         }

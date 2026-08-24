@@ -1,4 +1,5 @@
 #include <RcppEigen.h>
+#include "rng_seed.h"
 #include <complex>
 #include <random>
 #include <fftw3.h>
@@ -63,7 +64,9 @@ Eigen::VectorXd dmatern_copula_folded(const Eigen::MatrixXd& X, int dim1, int di
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd rmatern_copula_folded_full(int n_samples, int dim1, int dim2, double rho1, double rho2, int nu) {
+Eigen::MatrixXd rmatern_copula_folded_full(int n_samples, int dim1, int dim2,
+                                           double rho1, double rho2, int nu,
+                                           Rcpp::Nullable<int> seed = R_NilValue) {
     int N1 = 2 * dim1;  // folded dimension
     int N2 = 2 * dim2;  // folded dimension
     Eigen::MatrixXd samples(dim1 * dim2, n_samples);
@@ -76,9 +79,10 @@ Eigen::MatrixXd rmatern_copula_folded_full(int n_samples, int dim1, int dim2, do
     Eigen::MatrixXcd lambda_sqrt = eigs.array().sqrt().inverse();
 
     // Set up random number generation
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::normal_distribution<> d(0, 1);
+    // Deterministic seeding -- see src/rng_seed.h (this sampler is serial, so
+    // one generator suffices; the eigen samplers seed per eigenpair instead).
+    std::mt19937 gen(static_cast<std::uint32_t>(stdmatern::seed_base(seed)));
+    std::normal_distribution<double> d(0.0, 1.0);
     double scale = 1.0 / std::sqrt(N1 * N2);
 
     for(int s = 0; s < n_samples; ++s) {

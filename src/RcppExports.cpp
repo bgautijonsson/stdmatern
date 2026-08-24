@@ -137,8 +137,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rmatern_copula_circulant
-Eigen::MatrixXd rmatern_copula_circulant(int n_samples, int dim1, int dim2, double rho1, double rho2, int nu);
-RcppExport SEXP _stdmatern_rmatern_copula_circulant(SEXP n_samplesSEXP, SEXP dim1SEXP, SEXP dim2SEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP) {
+Eigen::MatrixXd rmatern_copula_circulant(int n_samples, int dim1, int dim2, double rho1, double rho2, int nu, Rcpp::Nullable<int> seed);
+RcppExport SEXP _stdmatern_rmatern_copula_circulant(SEXP n_samplesSEXP, SEXP dim1SEXP, SEXP dim2SEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -148,7 +148,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type rho1(rho1SEXP);
     Rcpp::traits::input_parameter< double >::type rho2(rho2SEXP);
     Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
-    rcpp_result_gen = Rcpp::wrap(rmatern_copula_circulant(n_samples, dim1, dim2, rho1, rho2, nu));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<int> >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(rmatern_copula_circulant(n_samples, dim1, dim2, rho1, rho2, nu, seed));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -216,8 +217,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rmatern_copula_eigen
-Eigen::MatrixXd rmatern_copula_eigen(int n, int dim_x, int dim_y, double rho1, double rho2, int nu);
-RcppExport SEXP _stdmatern_rmatern_copula_eigen(SEXP nSEXP, SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP) {
+Eigen::MatrixXd rmatern_copula_eigen(int n, int dim_x, int dim_y, double rho1, double rho2, int nu, Rcpp::Nullable<int> seed);
+RcppExport SEXP _stdmatern_rmatern_copula_eigen(SEXP nSEXP, SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -227,7 +228,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type rho1(rho1SEXP);
     Rcpp::traits::input_parameter< double >::type rho2(rho2SEXP);
     Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
-    rcpp_result_gen = Rcpp::wrap(rmatern_copula_eigen(n, dim_x, dim_y, rho1, rho2, nu));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<int> >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(rmatern_copula_eigen(n, dim_x, dim_y, rho1, rho2, nu, seed));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -291,8 +293,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rmatern_copula_folded_full
-Eigen::MatrixXd rmatern_copula_folded_full(int n_samples, int dim1, int dim2, double rho1, double rho2, int nu);
-RcppExport SEXP _stdmatern_rmatern_copula_folded_full(SEXP n_samplesSEXP, SEXP dim1SEXP, SEXP dim2SEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP) {
+Eigen::MatrixXd rmatern_copula_folded_full(int n_samples, int dim1, int dim2, double rho1, double rho2, int nu, Rcpp::Nullable<int> seed);
+RcppExport SEXP _stdmatern_rmatern_copula_folded_full(SEXP n_samplesSEXP, SEXP dim1SEXP, SEXP dim2SEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -302,7 +304,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type rho1(rho1SEXP);
     Rcpp::traits::input_parameter< double >::type rho2(rho2SEXP);
     Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
-    rcpp_result_gen = Rcpp::wrap(rmatern_copula_folded_full(n_samples, dim1, dim2, rho1, rho2, nu));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<int> >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(rmatern_copula_folded_full(n_samples, dim1, dim2, rho1, rho2, nu, seed));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -323,8 +326,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rmatern_eigen
-Eigen::MatrixXd rmatern_eigen(int n, int dim_x, int dim_y, double rho1, double rho2, int nu);
-RcppExport SEXP _stdmatern_rmatern_eigen(SEXP nSEXP, SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP) {
+Eigen::MatrixXd rmatern_eigen(int n, int dim_x, int dim_y, double rho1, double rho2, int nu, Rcpp::Nullable<int> seed);
+RcppExport SEXP _stdmatern_rmatern_eigen(SEXP nSEXP, SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -334,7 +337,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type rho1(rho1SEXP);
     Rcpp::traits::input_parameter< double >::type rho2(rho2SEXP);
     Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
-    rcpp_result_gen = Rcpp::wrap(rmatern_eigen(n, dim_x, dim_y, rho1, rho2, nu));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<int> >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(rmatern_eigen(n, dim_x, dim_y, rho1, rho2, nu, seed));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -349,19 +353,19 @@ static const R_CallMethodDef CallEntries[] = {
     {"_stdmatern_marginal_sd_cholesky", (DL_FUNC) &_stdmatern_marginal_sd_cholesky, 2},
     {"_stdmatern_dmatern_copula_cholesky", (DL_FUNC) &_stdmatern_dmatern_copula_cholesky, 6},
     {"_stdmatern_dmatern_copula_circulant", (DL_FUNC) &_stdmatern_dmatern_copula_circulant, 6},
-    {"_stdmatern_rmatern_copula_circulant", (DL_FUNC) &_stdmatern_rmatern_copula_circulant, 6},
+    {"_stdmatern_rmatern_copula_circulant", (DL_FUNC) &_stdmatern_rmatern_copula_circulant, 7},
     {"_stdmatern_construct_circulant_precision", (DL_FUNC) &_stdmatern_construct_circulant_precision, 5},
     {"_stdmatern_marginal_sd_eigen", (DL_FUNC) &_stdmatern_marginal_sd_eigen, 7},
     {"_stdmatern_make_standardized_matern_eigen", (DL_FUNC) &_stdmatern_make_standardized_matern_eigen, 5},
     {"_stdmatern_dmatern_copula_eigen", (DL_FUNC) &_stdmatern_dmatern_copula_eigen, 6},
-    {"_stdmatern_rmatern_copula_eigen", (DL_FUNC) &_stdmatern_rmatern_copula_eigen, 6},
+    {"_stdmatern_rmatern_copula_eigen", (DL_FUNC) &_stdmatern_rmatern_copula_eigen, 7},
     {"_stdmatern_fit_matern_copula_eigen", (DL_FUNC) &_stdmatern_fit_matern_copula_eigen, 5},
     {"_stdmatern_fit_matern_copula_eigen_isotropic", (DL_FUNC) &_stdmatern_fit_matern_copula_eigen_isotropic, 5},
     {"_stdmatern_fold_data", (DL_FUNC) &_stdmatern_fold_data, 3},
     {"_stdmatern_dmatern_copula_folded", (DL_FUNC) &_stdmatern_dmatern_copula_folded, 6},
-    {"_stdmatern_rmatern_copula_folded_full", (DL_FUNC) &_stdmatern_rmatern_copula_folded_full, 6},
+    {"_stdmatern_rmatern_copula_folded_full", (DL_FUNC) &_stdmatern_rmatern_copula_folded_full, 7},
     {"_stdmatern_dmatern_eigen", (DL_FUNC) &_stdmatern_dmatern_eigen, 6},
-    {"_stdmatern_rmatern_eigen", (DL_FUNC) &_stdmatern_rmatern_eigen, 6},
+    {"_stdmatern_rmatern_eigen", (DL_FUNC) &_stdmatern_rmatern_eigen, 7},
     {NULL, NULL, 0}
 };
 

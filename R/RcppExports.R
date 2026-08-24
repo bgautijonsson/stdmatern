@@ -37,8 +37,8 @@ dmatern_copula_circulant <- function(X, dim1, dim2, rho1, rho2, nu) {
     .Call(`_stdmatern_dmatern_copula_circulant`, X, dim1, dim2, rho1, rho2, nu)
 }
 
-rmatern_copula_circulant <- function(n_samples, dim1, dim2, rho1, rho2, nu) {
-    .Call(`_stdmatern_rmatern_copula_circulant`, n_samples, dim1, dim2, rho1, rho2, nu)
+rmatern_copula_circulant <- function(n_samples, dim1, dim2, rho1, rho2, nu, seed = NULL) {
+    .Call(`_stdmatern_rmatern_copula_circulant`, n_samples, dim1, dim2, rho1, rho2, nu, seed)
 }
 
 construct_circulant_precision <- function(dim1, dim2, rho1, rho2, nu) {
@@ -57,8 +57,8 @@ dmatern_copula_eigen <- function(X, dim_x, dim_y, rho1, rho2, nu) {
     .Call(`_stdmatern_dmatern_copula_eigen`, X, dim_x, dim_y, rho1, rho2, nu)
 }
 
-rmatern_copula_eigen <- function(n, dim_x, dim_y, rho1, rho2, nu) {
-    .Call(`_stdmatern_rmatern_copula_eigen`, n, dim_x, dim_y, rho1, rho2, nu)
+rmatern_copula_eigen <- function(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL) {
+    .Call(`_stdmatern_rmatern_copula_eigen`, n, dim_x, dim_y, rho1, rho2, nu, seed)
 }
 
 fit_matern_copula_eigen <- function(Y, dim_x, dim_y, nu, start = NULL) {
@@ -77,15 +77,15 @@ dmatern_copula_folded <- function(X, dim1, dim2, rho1, rho2, nu) {
     .Call(`_stdmatern_dmatern_copula_folded`, X, dim1, dim2, rho1, rho2, nu)
 }
 
-rmatern_copula_folded_full <- function(n_samples, dim1, dim2, rho1, rho2, nu) {
-    .Call(`_stdmatern_rmatern_copula_folded_full`, n_samples, dim1, dim2, rho1, rho2, nu)
+rmatern_copula_folded_full <- function(n_samples, dim1, dim2, rho1, rho2, nu, seed = NULL) {
+    .Call(`_stdmatern_rmatern_copula_folded_full`, n_samples, dim1, dim2, rho1, rho2, nu, seed)
 }
 
 dmatern_eigen <- function(X, dim_x, dim_y, rho1, rho2, nu) {
     .Call(`_stdmatern_dmatern_eigen`, X, dim_x, dim_y, rho1, rho2, nu)
 }
 
-rmatern_eigen <- function(n, dim_x, dim_y, rho1, rho2, nu) {
-    .Call(`_stdmatern_rmatern_eigen`, n, dim_x, dim_y, rho1, rho2, nu)
+rmatern_eigen <- function(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL) {
+    .Call(`_stdmatern_rmatern_eigen`, n, dim_x, dim_y, rho1, rho2, nu, seed)
 }
 
