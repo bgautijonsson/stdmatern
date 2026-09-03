@@ -55,7 +55,9 @@ Eigen::VectorXd dmatern_copula_cholesky(const Eigen::MatrixXd& X, int dim_x, int
     Eigen::VectorXd D = marginal_sd_cholesky(L, nu);
 
     // Compute log-determinant
-    double log_det = D.log().sum() + (nu + 1) * L.diagonal().array().log().sum();
+    // Elementwise log: on a VectorXd, .log() is Eigen's MATRIX logarithm (MatrixFunctions), which is
+    // undefined for a column vector -- it silently returned 0 in -DNDEBUG builds (2026-09-02 review, F3).
+    double log_det = D.array().log().sum() + (nu + 1) * L.diagonal().array().log().sum();
     // Compute quadratic forms
     Eigen::VectorXd quadform_sums(n_obs);
     for (int i = 0; i < n_obs; ++i) {

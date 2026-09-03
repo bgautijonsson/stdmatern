@@ -1,0 +1,11 @@
+^archive$
+^notes$
+^tools$
+^CLAUDE\.md$
+^README\.qmd$
+^README_files$
+^\.Rproj\.user$
+^.*\.Rproj$
+^\.DS_Store$
+^.*/\.DS_Store$
+^man/figures$

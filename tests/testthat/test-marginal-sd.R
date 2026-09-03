@@ -4,7 +4,7 @@ test_that("marginal_sd_eigen returns correct length", {
   solver1 <- eigen(as.matrix(Q1), symmetric = TRUE)
   solver2 <- eigen(as.matrix(Q2), symmetric = TRUE)
 
-  sds <- marginal_sd_eigen(
+  sds <- stdmatern:::marginal_sd_eigen(
     solver1$values, solver1$vectors, 5L,
     solver2$values, solver2$vectors, 4L,
     0L
@@ -18,7 +18,7 @@ test_that("marginal_sd_eigen returns positive values", {
   solver1 <- eigen(as.matrix(Q1), symmetric = TRUE)
   solver2 <- eigen(as.matrix(Q2), symmetric = TRUE)
 
-  sds <- marginal_sd_eigen(
+  sds <- stdmatern:::marginal_sd_eigen(
     solver1$values, solver1$vectors, 5L,
     solver2$values, solver2$vectors, 5L,
     0L

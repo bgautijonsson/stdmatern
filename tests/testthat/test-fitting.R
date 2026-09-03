@@ -49,11 +49,11 @@ test_that("fit_matern_copula respects bounds", {
   Y <- rmatern_copula(n = 50, dim = c(5, 5), rho = 0.5, nu = 0)
 
   fit_iso <- fit_matern_copula(Y, dim = c(5, 5), nu = 0, isotropic = TRUE)
-  expect_true(fit_iso$rho >= 0.01 && fit_iso$rho <= 0.99)
+  expect_true(fit_iso$rho >= 0.001 && fit_iso$rho <= 0.999)
 
   fit_aniso <- fit_matern_copula(Y, dim = c(5, 5), nu = 0, isotropic = FALSE)
-  expect_true(fit_aniso$rho1 >= 0.01 && fit_aniso$rho1 <= 0.99)
-  expect_true(fit_aniso$rho2 >= 0.01 && fit_aniso$rho2 <= 0.99)
+  expect_true(fit_aniso$rho1 >= 0.001 && fit_aniso$rho1 <= 0.999)
+  expect_true(fit_aniso$rho2 >= 0.001 && fit_aniso$rho2 <= 0.999)
 })
 
 test_that("fit_matern_copula works with nu = 1", {

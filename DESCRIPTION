@@ -1,19 +1,31 @@
 Package: stdmatern
 Type: Package
-Title: A package for performing computations on spatial fields with Matern correlation structure
-Version: 0.2.0
-Date: 2024-08-26
-Author: Brynjolfur Gauti Gudrunar Jonsson
-Maintainer: Brynjolfur Gauti Gudrunar Jonsson <brynjolfur@hi.is>
-Description: This package was developed to quickly and easily perform computations on spatial fields with Matern correlation structure
+Title: Standardised Matern Gaussian Fields and Copulas on Rectangular Grids
+Version: 0.3.0
+Date: 2026-09-02
+Authors@R: person("Brynjolfur Gauti", "Gudrunar Jonsson", email = "brynjolfur@hi.is", role = c("aut", "cre"))
+Description: Sparse precision matrices, densities, samplers and a maximum-likelihood
+    fit for the standardised anisotropic Matern-like Gaussian field and its Gaussian
+    copula on rectangular grids, built from the eigen systems of two AR(1)
+    precision matrices (RcppEigen). All numerical work is single-threaded and
+    reproducible from a seed; the fit runs nlopt's BOBYQA through the 'nloptr'
+    package. Developed for the copula-extended Max-and-Smooth inference stack.
 License: GPL (>= 2)
-Imports: Rcpp, RcppEigen, nloptr
-Depends: Matrix
-LinkingTo: 
+URL: https://github.com/bgautijonsson/stdmatern
+BugReports: https://github.com/bgautijonsson/stdmatern/issues
+Encoding: UTF-8
+Imports:
+    Matrix,
+    nloptr,
+    Rcpp
+LinkingTo:
     Rcpp,
     RcppEigen,
     nloptr
-Suggests: testthat (>= 3.0.0)
+Suggests:
+    callr,
+    pkgload,
+    testthat (>= 3.0.0)
 Config/testthat/edition: 3
-RoxygenNote: 7.3.2
-SystemRequirements: nlopt
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3

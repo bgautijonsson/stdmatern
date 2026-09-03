@@ -104,80 +104,16 @@ tictoc::toc()
 
     0.62 sec elapsed
 
-## Folded Circulant Approximation
+## Version 0.3.0 (2026-09-02)
 
-The package also provides a circulant approximation to the precision
-matrix, $\mathbf Q$, with reflective boundary conditions. This lets us
-do fast computations because of the FFT. This package uses the [FFTW C
-library](https://www.fftw.org/) for FFT computations, and the [Eigen C++
-library](https://eigen.tuxfamily.org/index.php?title=Main_Page) for more
-general computations.
-
-``` r
-tictoc::tic()
-dens <- dmatern_copula_folded(Z, dim1, dim2, rho1, rho2, nu) |> sum()
-tictoc::toc()
-```
-
-    0.071 sec elapsed
-
-# Benchmarks
-
-The following section contains a simple benchmark to compare the
-computation times of the exact method and the folded approximation. For
-further benchmarks, see the working paper linked above.
-
-``` r
-my_fun <- function(dim) {
-  X <- rmatern_copula_eigen(1, dim, dim, rho, rho, nu)
-  bench::mark(
-    "Eigen" = dmatern_copula_eigen(X, dim, dim, rho, rho, nu),
-    "Folded" = dmatern_copula_folded(X, dim, dim, rho, rho, nu),
-    filter_gc = FALSE,
-    iterations = 20,
-    check = FALSE
-  ) |>
-    mutate(
-      dim = dim
-    )
-}
-```
-
-``` r
-rho <- 0.5
-nu <- 2
-results <- purrr::map(
-  c(seq(20, 240, by = 20)),
-  my_fun
-) |> purrr::list_rbind()
-```
-
-``` r
-results |> 
-  mutate(
-    dim = glue::glue("{dim}x{dim}"),
-    expression = as.character(expression)
-  )  |> 
-  select(
-    Grid = dim, expression, median
-  ) |> 
-  tidyr::pivot_wider(names_from = expression, values_from = median)
-```
-
-    # A tibble: 12 × 3
-       Grid    dmatern_copula_eigen(X, dim, dim, rho, rho, …¹ dmatern_copula_folde…²
-       <glue>  <bench_tm>                                     <bench_tm>            
-     1 20x20   0.000244565                                    0.0001152511          
-     2 40x40   0.001670340                                    0.0002810345          
-     3 60x60   0.007151035                                    0.0005678089          
-     4 80x80   0.022252832                                    0.0011894921          
-     5 100x100 0.051037436                                    0.0016876420          
-     6 120x120 0.088788534                                    0.0025653904          
-     7 140x140 0.156584720                                    0.0038019300          
-     8 160x160 0.297652354                                    0.0054231521          
-     9 180x180 0.418930067                                    0.0070010575          
-    10 200x200 0.596900140                                    0.0077483030          
-    11 220x220 0.892151616                                    0.0136930775          
-    12 240x240 1.358173770                                    0.0148482526          
-    # ℹ abbreviated names: ¹​`dmatern_copula_eigen(X, dim, dim, rho, rho, nu)`,
-    #   ²​`dmatern_copula_folded(X, dim, dim, rho, rho, nu)`
+The circulant, folded and Cholesky variants, `plot_matern()` and the 2024
+benchmark were retired to `archive/retired-2026-09-02/` (no production caller;
+see `notes/stdmatern-review-2026-09-02.html`). The package no longer links
+fftw3 or a system nlopt: the fit reaches nlopt through `nloptr`'s registered
+C callables. All numerical work is single-threaded and reproducible from a
+seed. `fit_matern_copula()` reports `n_evals`, `converged` and `stop_reason`,
+has no wall-clock cap, and accepts `method = "kronecker"` for an objective
+that costs O(N (n_x + n_y) n) per evaluation instead of O(N^2 n).
+`matern_spectral()` returns the standardised precision together with its half
+log-determinant, marginal standard deviations and the two AR(1) eigen systems.
+The production-path benchmark is `tools/bench.sh`.

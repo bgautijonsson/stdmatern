@@ -3,9 +3,13 @@
 
 // [[Rcpp::depends(RcppEigen)]]
 
-// Function to create a 1-dimensional AR(1) precision matrix
+// 1-D AR(1) precision matrix with unit marginal variance: off-diagonal
+// -rho/(1 - rho^2), interior diagonal (1 + rho^2)/(1 - rho^2), corners
+// 1/(1 - rho^2). Arguments are validated at the R boundary
+// (R/standardised_matern.R); dim <= 0 returns an empty matrix.
 // [[Rcpp::export]]
-Eigen::SparseMatrix<double> make_AR_prec_matrix(int dim, double rho) {
+Eigen::SparseMatrix<double> make_AR_prec_matrix_cpp(int dim, double rho) {
+    if (dim <= 0) return Eigen::SparseMatrix<double>(0, 0);
     double scaling = 1.0 / (1.0 - rho * rho);
     double off_diags = -rho * scaling;
     double diag = (1.0 + rho * rho) * scaling;

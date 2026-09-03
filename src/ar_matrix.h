@@ -5,6 +5,6 @@
 
 // [[Rcpp::depends(RcppEigen)]]
 
-Eigen::SparseMatrix<double> make_AR_prec_matrix(int dim, double rho);
+Eigen::SparseMatrix<double> make_AR_prec_matrix_cpp(int dim, double rho);
 
 #endif

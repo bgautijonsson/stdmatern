@@ -84,56 +84,6 @@ dens <- dmatern_copula_eigen(Z, dim1, dim2, rho1, rho2, nu) |> sum()
 tictoc::toc()
 ```
 
-## Folded Circulant Approximation
+## Version 0.3.0 (2026-09-02)
 
-The package also provides a circulant approximation to the precision matrix, $\mathbf Q$, with reflective boundary conditions. This lets us do fast computations because of the FFT. This package uses the [FFTW C library](https://www.fftw.org/) for FFT computations, and the [Eigen C++ library](https://eigen.tuxfamily.org/index.php?title=Main_Page) for more general computations.
-
-```{r}
-tictoc::tic()
-dens <- dmatern_copula_folded(Z, dim1, dim2, rho1, rho2, nu) |> sum()
-tictoc::toc()
-```
-
-# Benchmarks
-
-The following section contains a simple benchmark to compare the computation times of the exact method and the folded approximation. For further benchmarks, see the working paper linked above.
-
-```{r}
-my_fun <- function(dim) {
-  X <- rmatern_copula_eigen(1, dim, dim, rho, rho, nu)
-  bench::mark(
-    "Eigen" = dmatern_copula_eigen(X, dim, dim, rho, rho, nu),
-    "Folded" = dmatern_copula_folded(X, dim, dim, rho, rho, nu),
-    filter_gc = FALSE,
-    iterations = 20,
-    check = FALSE
-  ) |>
-    mutate(
-      dim = dim
-    )
-}
-```
-
-
-```{r}
-#| cache: true
-rho <- 0.5
-nu <- 2
-results <- purrr::map(
-  c(seq(20, 240, by = 20)),
-  my_fun
-) |> purrr::list_rbind()
-```
-
-
-```{r}
-results |> 
-  mutate(
-    dim = glue::glue("{dim}x{dim}"),
-    expression = as.character(expression)
-  )  |> 
-  select(
-    Grid = dim, expression, median
-  ) |> 
-  tidyr::pivot_wider(names_from = expression, values_from = median)
-```
+See README.md: the circulant, folded and Cholesky variants and the 2024 benchmark were retired to `archive/retired-2026-09-02/`; the fit reports its status and accepts `method = "kronecker"`; `matern_spectral()` is new.
