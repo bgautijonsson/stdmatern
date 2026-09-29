@@ -54,7 +54,7 @@ Eigen::VectorXd dmatern_eigen_cpp(const Eigen::MatrixXd& X, int dim_x, int dim_y
 // [[Rcpp::export]]
 Eigen::MatrixXd rmatern_eigen_cpp(int n, int dim_x, int dim_y, double rho1,
                                   double rho2, int nu,
-                                  Rcpp::Nullable<int> seed = R_NilValue) {
+                                  Rcpp::Nullable<int> seed = R_NilValue, bool legacy32 = false) {
     if (n < 0 || dim_x <= 0 || dim_y <= 0) return MatrixXd(0, 0);
     SparseMatrix<double> Q1 = make_AR_prec_matrix_cpp(dim_x, rho1);
     SparseMatrix<double> Q2 = make_AR_prec_matrix_cpp(dim_y, rho2);
@@ -74,7 +74,7 @@ Eigen::MatrixXd rmatern_eigen_cpp(int n, int dim_x, int dim_y, double rho1,
     VectorXd v(D);
     for (int i = 0; i < dim_x; ++i) {
         for (int j = 0; j < dim_y; ++j) {
-            std::mt19937 gen = stdmatern::pair_generator(rng_base, i, j, dim_y);
+            std::mt19937 gen = stdmatern::pair_generator(rng_base, i, j, dim_y, legacy32);
             std::normal_distribution<double> d(0.0, 1.0);
             double lambda = std::pow(A1(i) + A2(j), -(nu + 1.0) / 2.0);
             v = kroneckerProduct(V1.col(i), V2.col(j));

@@ -253,7 +253,7 @@ Eigen::ArrayXd dmatern_copula_kron_cpp(const Eigen::MatrixXd& X, int dim_x, int 
 // [[Rcpp::export]]
 Eigen::MatrixXd rmatern_copula_eigen_cpp(int n, int dim_x, int dim_y, double rho1,
                                          double rho2, int nu,
-                                         Rcpp::Nullable<int> seed = R_NilValue) {
+                                         Rcpp::Nullable<int> seed = R_NilValue, bool legacy32 = false) {
     if (n < 0 || dim_x <= 0 || dim_y <= 0) return MatrixXd(0, 0);
     SparseMatrix<double> Q1 = make_AR_prec_matrix_cpp(dim_x, rho1);
     SparseMatrix<double> Q2 = make_AR_prec_matrix_cpp(dim_y, rho2);
@@ -275,7 +275,7 @@ Eigen::MatrixXd rmatern_copula_eigen_cpp(int n, int dim_x, int dim_y, double rho
     VectorXd v(D);
     for (int i = 0; i < dim_x; ++i) {
         for (int j = 0; j < dim_y; ++j) {
-            std::mt19937 gen = stdmatern::pair_generator(rng_base, i, j, dim_y);
+            std::mt19937 gen = stdmatern::pair_generator(rng_base, i, j, dim_y, legacy32);
             std::normal_distribution<double> d(0.0, 1.0);
             double lambda = std::pow(A1(i) + A2(j), -(nu + 1.0) / 2.0);
             v = kroneckerProduct(V1.col(i), V2.col(j));
@@ -297,7 +297,7 @@ Eigen::MatrixXd rmatern_copula_eigen_cpp(int n, int dim_x, int dim_y, double rho
 // [[Rcpp::export]]
 Eigen::MatrixXd rmatern_copula_kron_cpp(int n, int dim_x, int dim_y, double rho1,
                                         double rho2, int nu,
-                                        Rcpp::Nullable<int> seed = R_NilValue) {
+                                        Rcpp::Nullable<int> seed = R_NilValue, bool legacy32 = false) {
     if (n < 0 || dim_x <= 0 || dim_y <= 0) return MatrixXd(0, 0);
     SparseMatrix<double> Q1 = make_AR_prec_matrix_cpp(dim_x, rho1);
     SparseMatrix<double> Q2 = make_AR_prec_matrix_cpp(dim_y, rho2);
@@ -314,7 +314,7 @@ Eigen::MatrixXd rmatern_copula_kron_cpp(int n, int dim_x, int dim_y, double rho1
     const std::uint64_t rng_base = stdmatern::seed_base(seed);
     for (int i = 0; i < dim_x; ++i) {
         for (int j = 0; j < dim_y; ++j) {
-            std::mt19937 gen = stdmatern::pair_generator(rng_base, i, j, dim_y);
+            std::mt19937 gen = stdmatern::pair_generator(rng_base, i, j, dim_y, legacy32);
             std::normal_distribution<double> d(0.0, 1.0);
             const double lambda = std::pow(A1(i) + A2(j), -(nu + 1.0) / 2.0);
             for (int s = 0; s < n; ++s) E(j, i + std::size_t(dim_x) * s) = lambda * d(gen);
@@ -482,4 +482,20 @@ Rcpp::List fit_matern_copula_eigen_isotropic_cpp(
         Rcpp::Named("stop_reason") = r.stop_reason,
         Rcpp::Named("method") = std::string(kron ? "kronecker" : "eigenpair")
     );
+}
+
+// The first normal of every eigenpair's generator for one seed (internal, for the seeding tests):
+// two eigenpairs that share a stream show the same value.
+// [[Rcpp::export]]
+Rcpp::NumericVector pair_first_normals_cpp(int dim_x, int dim_y, int seed, bool legacy32) {
+    Rcpp::NumericVector out(std::size_t(dim_x) * dim_y);
+    const std::uint64_t base = static_cast<std::uint64_t>(static_cast<std::uint32_t>(seed));
+    for (int i = 0; i < dim_x; ++i) {
+        for (int j = 0; j < dim_y; ++j) {
+            std::mt19937 gen = stdmatern::pair_generator(base, i, j, dim_y, legacy32);
+            std::normal_distribution<double> d(0.0, 1.0);
+            out[std::size_t(i) * dim_y + j] = d(gen);
+        }
+    }
+    return out;
 }

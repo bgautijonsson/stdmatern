@@ -89,6 +89,10 @@ dens <- dmatern_copula_eigen(Z, dim1, dim2, rho1, rho2, nu) |> sum()
 tictoc::toc()
 ```
 
+## Version 0.5.0 (2026-09-29)
+
+See README.md: each eigenpair's generator is seeded from the full 64-bit hash (0.4.0 cut it to 32 bits, so two eigenpairs could share a stream); every draw changes, and `seeding = "legacy32"` reproduces the 0.4.0 draws.
+
 ## Version 0.4.0 (2026-09-29)
 
 See README.md: every `method` argument defaults to `"kronecker"` (O(N (n_x + n_y)) instead of O(N^2), equal to rounding); `"eigenpair"` is the reference form.

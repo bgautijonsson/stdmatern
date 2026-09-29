@@ -1,7 +1,7 @@
 Package: stdmatern
 Type: Package
 Title: Standardised Matern Gaussian Fields and Copulas on Rectangular Grids
-Version: 0.4.0
+Version: 0.5.0
 Date: 2026-09-29
 Authors@R: person("Brynjolfur Gauti", "Gudrunar Jonsson", email = "brynjolfur@hi.is", role = c("aut", "cre"))
 Description: Sparse precision matrices, densities, samplers and a maximum-likelihood
@@ -25,7 +25,8 @@ LinkingTo:
 Suggests:
     callr,
     pkgload,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    withr
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3

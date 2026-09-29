@@ -29,12 +29,12 @@ dmatern_copula_kron_cpp <- function(X, dim_x, dim_y, rho1, rho2, nu) {
     .Call(`_stdmatern_dmatern_copula_kron_cpp`, X, dim_x, dim_y, rho1, rho2, nu)
 }
 
-rmatern_copula_eigen_cpp <- function(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL) {
-    .Call(`_stdmatern_rmatern_copula_eigen_cpp`, n, dim_x, dim_y, rho1, rho2, nu, seed)
+rmatern_copula_eigen_cpp <- function(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL, legacy32 = FALSE) {
+    .Call(`_stdmatern_rmatern_copula_eigen_cpp`, n, dim_x, dim_y, rho1, rho2, nu, seed, legacy32)
 }
 
-rmatern_copula_kron_cpp <- function(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL) {
-    .Call(`_stdmatern_rmatern_copula_kron_cpp`, n, dim_x, dim_y, rho1, rho2, nu, seed)
+rmatern_copula_kron_cpp <- function(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL, legacy32 = FALSE) {
+    .Call(`_stdmatern_rmatern_copula_kron_cpp`, n, dim_x, dim_y, rho1, rho2, nu, seed, legacy32)
 }
 
 fit_matern_copula_eigen_cpp <- function(Y, dim_x, dim_y, nu, start = NULL, kron = FALSE, maxeval = 1000L, xtol_rel = 1e-6, ftol_rel = 1e-8) {
@@ -45,11 +45,15 @@ fit_matern_copula_eigen_isotropic_cpp <- function(Y, dim_x, dim_y, nu, start = N
     .Call(`_stdmatern_fit_matern_copula_eigen_isotropic_cpp`, Y, dim_x, dim_y, nu, start, kron, maxeval, xtol_rel, ftol_rel)
 }
 
+pair_first_normals_cpp <- function(dim_x, dim_y, seed, legacy32) {
+    .Call(`_stdmatern_pair_first_normals_cpp`, dim_x, dim_y, seed, legacy32)
+}
+
 dmatern_eigen_cpp <- function(X, dim_x, dim_y, rho1, rho2, nu) {
     .Call(`_stdmatern_dmatern_eigen_cpp`, X, dim_x, dim_y, rho1, rho2, nu)
 }
 
-rmatern_eigen_cpp <- function(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL) {
-    .Call(`_stdmatern_rmatern_eigen_cpp`, n, dim_x, dim_y, rho1, rho2, nu, seed)
+rmatern_eigen_cpp <- function(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL, legacy32 = FALSE) {
+    .Call(`_stdmatern_rmatern_eigen_cpp`, n, dim_x, dim_y, rho1, rho2, nu, seed, legacy32)
 }
 

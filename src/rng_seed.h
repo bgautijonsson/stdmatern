@@ -18,7 +18,15 @@
 // order is fixed too and a draw is bit-for-bit reproducible from the seed; the
 // 2026-08-24 version still merged per-thread partial sums in arrival order and
 // was reproducible only up to floating-point rounding at more than one thread.
-// The seed space is 32 bits (std::mt19937 takes one word).
+//
+// Seeding (0.5.0, 2026-09-29). The pair's key splitmix64((base << 32) ^ idx) is
+// a bijection of (base, idx), 64 bits wide. Up to 0.4.0 it was truncated to one
+// 32-bit word to seed std::mt19937, so two eigenpairs of one draw could share a
+// seed -- birthday odds of about N^2 / 2^33 for N eigenpairs, 0.7% of seeds at
+// 7,776 cells and 9% at 28,063 -- and then carried identical normal streams
+// through every draw. The generator is now seeded through std::seed_seq with
+// both 32-bit halves of the key, so distinct pairs get distinct seed sequences.
+// The truncated scheme stays available as "legacy32" to reproduce 0.4.0 draws.
 
 namespace stdmatern {
 
@@ -40,12 +48,16 @@ inline std::uint64_t seed_base(Rcpp::Nullable<int> seed) {
       static_cast<std::uint32_t>(R::unif_rand() * 4294967296.0));
 }
 
-// Generator for eigenpair (i, j) on a grid with dim_y columns.
+// Generator for eigenpair (i, j) on a grid with dim_y columns: seeded from the
+// full 64-bit key, or (legacy32 = true) from its low 32 bits as up to 0.4.0.
 inline std::mt19937 pair_generator(std::uint64_t base, int i, int j,
-                                   int dim_y) {
+                                   int dim_y, bool legacy32 = false) {
   const std::uint64_t idx = static_cast<std::uint64_t>(i) * dim_y + j;
-  return std::mt19937(
-      static_cast<std::uint32_t>(splitmix64((base << 32) ^ idx)));
+  const std::uint64_t key = splitmix64((base << 32) ^ idx);
+  if (legacy32) return std::mt19937(static_cast<std::uint32_t>(key));
+  std::seed_seq seq{static_cast<std::uint32_t>(key),
+                    static_cast<std::uint32_t>(key >> 32)};
+  return std::mt19937(seq);
 }
 
 }  // namespace stdmatern

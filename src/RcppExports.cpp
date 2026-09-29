@@ -122,8 +122,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rmatern_copula_eigen_cpp
-Eigen::MatrixXd rmatern_copula_eigen_cpp(int n, int dim_x, int dim_y, double rho1, double rho2, int nu, Rcpp::Nullable<int> seed);
-RcppExport SEXP _stdmatern_rmatern_copula_eigen_cpp(SEXP nSEXP, SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP, SEXP seedSEXP) {
+Eigen::MatrixXd rmatern_copula_eigen_cpp(int n, int dim_x, int dim_y, double rho1, double rho2, int nu, Rcpp::Nullable<int> seed, bool legacy32);
+RcppExport SEXP _stdmatern_rmatern_copula_eigen_cpp(SEXP nSEXP, SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP, SEXP seedSEXP, SEXP legacy32SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -134,13 +134,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type rho2(rho2SEXP);
     Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<int> >::type seed(seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(rmatern_copula_eigen_cpp(n, dim_x, dim_y, rho1, rho2, nu, seed));
+    Rcpp::traits::input_parameter< bool >::type legacy32(legacy32SEXP);
+    rcpp_result_gen = Rcpp::wrap(rmatern_copula_eigen_cpp(n, dim_x, dim_y, rho1, rho2, nu, seed, legacy32));
     return rcpp_result_gen;
 END_RCPP
 }
 // rmatern_copula_kron_cpp
-Eigen::MatrixXd rmatern_copula_kron_cpp(int n, int dim_x, int dim_y, double rho1, double rho2, int nu, Rcpp::Nullable<int> seed);
-RcppExport SEXP _stdmatern_rmatern_copula_kron_cpp(SEXP nSEXP, SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP, SEXP seedSEXP) {
+Eigen::MatrixXd rmatern_copula_kron_cpp(int n, int dim_x, int dim_y, double rho1, double rho2, int nu, Rcpp::Nullable<int> seed, bool legacy32);
+RcppExport SEXP _stdmatern_rmatern_copula_kron_cpp(SEXP nSEXP, SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP, SEXP seedSEXP, SEXP legacy32SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -151,7 +152,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type rho2(rho2SEXP);
     Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<int> >::type seed(seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(rmatern_copula_kron_cpp(n, dim_x, dim_y, rho1, rho2, nu, seed));
+    Rcpp::traits::input_parameter< bool >::type legacy32(legacy32SEXP);
+    rcpp_result_gen = Rcpp::wrap(rmatern_copula_kron_cpp(n, dim_x, dim_y, rho1, rho2, nu, seed, legacy32));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -193,6 +195,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// pair_first_normals_cpp
+Rcpp::NumericVector pair_first_normals_cpp(int dim_x, int dim_y, int seed, bool legacy32);
+RcppExport SEXP _stdmatern_pair_first_normals_cpp(SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP seedSEXP, SEXP legacy32SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type dim_x(dim_xSEXP);
+    Rcpp::traits::input_parameter< int >::type dim_y(dim_ySEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< bool >::type legacy32(legacy32SEXP);
+    rcpp_result_gen = Rcpp::wrap(pair_first_normals_cpp(dim_x, dim_y, seed, legacy32));
+    return rcpp_result_gen;
+END_RCPP
+}
 // dmatern_eigen_cpp
 Eigen::VectorXd dmatern_eigen_cpp(const Eigen::MatrixXd& X, int dim_x, int dim_y, double rho1, double rho2, int nu);
 RcppExport SEXP _stdmatern_dmatern_eigen_cpp(SEXP XSEXP, SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP) {
@@ -210,8 +226,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rmatern_eigen_cpp
-Eigen::MatrixXd rmatern_eigen_cpp(int n, int dim_x, int dim_y, double rho1, double rho2, int nu, Rcpp::Nullable<int> seed);
-RcppExport SEXP _stdmatern_rmatern_eigen_cpp(SEXP nSEXP, SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP, SEXP seedSEXP) {
+Eigen::MatrixXd rmatern_eigen_cpp(int n, int dim_x, int dim_y, double rho1, double rho2, int nu, Rcpp::Nullable<int> seed, bool legacy32);
+RcppExport SEXP _stdmatern_rmatern_eigen_cpp(SEXP nSEXP, SEXP dim_xSEXP, SEXP dim_ySEXP, SEXP rho1SEXP, SEXP rho2SEXP, SEXP nuSEXP, SEXP seedSEXP, SEXP legacy32SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -222,7 +238,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type rho2(rho2SEXP);
     Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<int> >::type seed(seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(rmatern_eigen_cpp(n, dim_x, dim_y, rho1, rho2, nu, seed));
+    Rcpp::traits::input_parameter< bool >::type legacy32(legacy32SEXP);
+    rcpp_result_gen = Rcpp::wrap(rmatern_eigen_cpp(n, dim_x, dim_y, rho1, rho2, nu, seed, legacy32));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -235,12 +252,13 @@ static const R_CallMethodDef CallEntries[] = {
     {"_stdmatern_matern_spectral_cpp", (DL_FUNC) &_stdmatern_matern_spectral_cpp, 6},
     {"_stdmatern_dmatern_copula_eigen_cpp", (DL_FUNC) &_stdmatern_dmatern_copula_eigen_cpp, 6},
     {"_stdmatern_dmatern_copula_kron_cpp", (DL_FUNC) &_stdmatern_dmatern_copula_kron_cpp, 6},
-    {"_stdmatern_rmatern_copula_eigen_cpp", (DL_FUNC) &_stdmatern_rmatern_copula_eigen_cpp, 7},
-    {"_stdmatern_rmatern_copula_kron_cpp", (DL_FUNC) &_stdmatern_rmatern_copula_kron_cpp, 7},
+    {"_stdmatern_rmatern_copula_eigen_cpp", (DL_FUNC) &_stdmatern_rmatern_copula_eigen_cpp, 8},
+    {"_stdmatern_rmatern_copula_kron_cpp", (DL_FUNC) &_stdmatern_rmatern_copula_kron_cpp, 8},
     {"_stdmatern_fit_matern_copula_eigen_cpp", (DL_FUNC) &_stdmatern_fit_matern_copula_eigen_cpp, 9},
     {"_stdmatern_fit_matern_copula_eigen_isotropic_cpp", (DL_FUNC) &_stdmatern_fit_matern_copula_eigen_isotropic_cpp, 9},
+    {"_stdmatern_pair_first_normals_cpp", (DL_FUNC) &_stdmatern_pair_first_normals_cpp, 4},
     {"_stdmatern_dmatern_eigen_cpp", (DL_FUNC) &_stdmatern_dmatern_eigen_cpp, 6},
-    {"_stdmatern_rmatern_eigen_cpp", (DL_FUNC) &_stdmatern_rmatern_eigen_cpp, 7},
+    {"_stdmatern_rmatern_eigen_cpp", (DL_FUNC) &_stdmatern_rmatern_eigen_cpp, 8},
     {NULL, NULL, 0}
 };
 

@@ -4,7 +4,7 @@
 \alias{rmatern}
 \title{Sample the unstandardised Matern-like field}
 \usage{
-rmatern(n, dim, rho, nu, seed = NULL)
+rmatern(n, dim, rho, nu, seed = NULL, seeding = default_seeding())
 }
 \arguments{
 \item{n}{Number of draws (a non-negative integer).}
@@ -16,6 +16,9 @@ rmatern(n, dim, rho, nu, seed = NULL)
 \item{nu}{Smoothness, a non-negative integer (the precision is raised to \code{nu + 1}).}
 
 \item{seed}{A whole number, or \code{NULL} to draw the base seed from R's RNG.}
+
+\item{seeding}{\code{"full"} (the 0.5.0 scheme) or \code{"legacy32"} (the 0.4.0 draws);
+see Details.}
 }
 \value{
 A \code{dim_x * dim_y} by \code{n} matrix, rows in x-major station order.

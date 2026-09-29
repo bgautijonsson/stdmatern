@@ -11,10 +11,20 @@ rmatern_copula(
   rho,
   nu,
   seed = NULL,
-  method = c("kronecker", "eigenpair")
+  method = c("kronecker", "eigenpair"),
+  seeding = default_seeding()
 )
 
-rmatern_copula_eigen(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL)
+rmatern_copula_eigen(
+  n,
+  dim_x,
+  dim_y,
+  rho1,
+  rho2,
+  nu,
+  seed = NULL,
+  seeding = default_seeding()
+)
 }
 \arguments{
 \item{n}{Number of draws (a non-negative integer).}
@@ -33,6 +43,9 @@ rmatern_copula_eigen(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL)
 reference form. Both use the same per-eigenpair random numbers, so for a
 given seed they agree to rounding.}
 
+\item{seeding}{\code{"full"} (the 0.5.0 scheme) or \code{"legacy32"} (the 0.4.0 draws);
+see Details.}
+
 \item{dim_x, dim_y}{Grid dimensions (positive integers).}
 
 \item{rho1, rho2}{Correlation parameters along x and y, in (-1, 1).}
@@ -45,6 +58,15 @@ Draws Gaussian scores with correlation \eqn{\tilde Q^{-1}}
 (\code{\link[=make_standardized_matern]{make_standardized_matern()}}). Each eigenpair's stream is seeded from
 \code{seed}, so a draw is bit-for-bit reproducible from the seed alone; with
 \code{seed = NULL} the base seed is drawn from R's RNG, so \code{set.seed()} governs it.
+}
+\details{
+Since 0.5.0 each eigenpair's generator is seeded from the full 64-bit hash of
+(seed, pair index) (\code{seeding = "full"}). Up to 0.4.0 the hash was cut to 32
+bits, so two eigenpairs of one draw could share a random stream (about 0.7\% of
+seeds on a 7,776-cell grid, 9\% on 28,063 cells); \code{seeding = "legacy32"}
+reproduces those draws exactly, for results produced before the fix. The
+default is \code{getOption("stdmatern.seeding")}, else the environment variable
+\code{STDMATERN_SEEDING}, else \code{"full"}, so a study can pin its scheme once.
 }
 \examples{
 Z <- rmatern_copula(4, c(6, 5), 0.7, 1, seed = 42)

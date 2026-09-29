@@ -104,6 +104,17 @@ tictoc::toc()
 
     0.62 sec elapsed
 
+## Version 0.5.0 (2026-09-29)
+
+The samplers seed each eigenpair's generator from the full 64-bit hash of
+(seed, pair index). Up to 0.4.0 the hash was cut to one 32-bit word, so two
+eigenpairs of one draw could share a random stream: about 0.7% of seeds on a
+7,776-cell grid and 9% on 28,063 cells gave a spurious cross-covariance between
+two eigen-coefficients. Every draw changes. `seeding = "legacy32"` (argument,
+`options(stdmatern.seeding = "legacy32")` or the environment variable
+`STDMATERN_SEEDING=legacy32`) reproduces the 0.4.0 draws exactly, for results
+produced before the fix.
+
 ## Version 0.4.0 (2026-09-29)
 
 `make_standardized_matern()`, `matern_spectral()`, `dmatern_copula()`,

@@ -245,6 +245,14 @@ dmatern <- function(X, dim, rho, nu) {
 #' `seed`, so a draw is bit-for-bit reproducible from the seed alone; with
 #' `seed = NULL` the base seed is drawn from R's RNG, so `set.seed()` governs it.
 #'
+#' Since 0.5.0 each eigenpair's generator is seeded from the full 64-bit hash of
+#' (seed, pair index) (`seeding = "full"`). Up to 0.4.0 the hash was cut to 32
+#' bits, so two eigenpairs of one draw could share a random stream (about 0.7% of
+#' seeds on a 7,776-cell grid, 9% on 28,063 cells); `seeding = "legacy32"`
+#' reproduces those draws exactly, for results produced before the fix. The
+#' default is `getOption("stdmatern.seeding")`, else the environment variable
+#' `STDMATERN_SEEDING`, else `"full"`, so a study can pin its scheme once.
+#'
 #' @param n Number of draws (a non-negative integer).
 #' @inheritParams make_standardized_matern
 #' @param seed A whole number, or `NULL` to draw the base seed from R's RNG.
@@ -253,24 +261,42 @@ dmatern <- function(X, dim, rho, nu) {
 #'   `"eigenpair"` adds one Kronecker eigenvector at a time, O(N^2 n), the 2024
 #'   reference form. Both use the same per-eigenpair random numbers, so for a
 #'   given seed they agree to rounding.
+#' @param seeding `"full"` (the 0.5.0 scheme) or `"legacy32"` (the 0.4.0 draws);
+#'   see Details.
 #' @return A `dim_x * dim_y` by `n` matrix, rows in x-major station order.
 #' @examples
 #' Z <- rmatern_copula(4, c(6, 5), 0.7, 1, seed = 42)
 #' identical(Z, rmatern_copula(4, c(6, 5), 0.7, 1, seed = 42))
 #' @export
-rmatern_copula <- function(n, dim, rho, nu, seed = NULL, method = c("kronecker", "eigenpair")) {
+rmatern_copula <- function(n, dim, rho, nu, seed = NULL, method = c("kronecker", "eigenpair"),
+                           seeding = default_seeding()) {
   method <- match.arg(method)
+  legacy <- check_seeding(seeding)
   p <- parse_dim_rho(dim, rho)
   draw <- if (method == "kronecker") rmatern_copula_kron_cpp else rmatern_copula_eigen_cpp
-  draw(check_n(n), p$dim_x, p$dim_y, p$rho1, p$rho2, check_nu(nu), check_seed(seed))
+  draw(check_n(n), p$dim_x, p$dim_y, p$rho1, p$rho2, check_nu(nu), check_seed(seed), legacy)
+}
+
+# The seeding scheme's default: the option, else the environment variable, else "full".
+default_seeding <- function() {
+  getOption("stdmatern.seeding", Sys.getenv("STDMATERN_SEEDING", "full"))
+}
+
+# TRUE for the 0.4.0 scheme, FALSE for the full one; anything else is refused.
+check_seeding <- function(seeding) {
+  if (!is.character(seeding) || length(seeding) != 1L || !seeding %in% c("full", "legacy32")) {
+    stop('seeding must be "full" or "legacy32"', call. = FALSE)
+  }
+  identical(seeding, "legacy32")
 }
 
 #' @rdname rmatern_copula
 #' @param dim_x,dim_y Grid dimensions (positive integers).
 #' @param rho1,rho2 Correlation parameters along x and y, in (-1, 1).
 #' @export
-rmatern_copula_eigen <- function(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL) {
-  rmatern_copula(n, c(dim_x, dim_y), c(rho1, rho2), nu, seed)
+rmatern_copula_eigen <- function(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL,
+                                 seeding = default_seeding()) {
+  rmatern_copula(n, c(dim_x, dim_y), c(rho1, rho2), nu, seed, seeding = seeding)
 }
 
 #' Sample the unstandardised Matern-like field
@@ -278,9 +304,10 @@ rmatern_copula_eigen <- function(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL) {
 #' @inheritParams rmatern_copula
 #' @return A `dim_x * dim_y` by `n` matrix, rows in x-major station order.
 #' @export
-rmatern <- function(n, dim, rho, nu, seed = NULL) {
+rmatern <- function(n, dim, rho, nu, seed = NULL, seeding = default_seeding()) {
+  legacy <- check_seeding(seeding)
   p <- parse_dim_rho(dim, rho)
-  rmatern_eigen_cpp(check_n(n), p$dim_x, p$dim_y, p$rho1, p$rho2, check_nu(nu), check_seed(seed))
+  rmatern_eigen_cpp(check_n(n), p$dim_x, p$dim_y, p$rho1, p$rho2, check_nu(nu), check_seed(seed), legacy)
 }
 
 # ---- the fit ---------------------------------------------------------------------------------------
