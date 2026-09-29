@@ -48,12 +48,32 @@ Eigen::ArrayXd marginal_sd_eigen(
     return marginal_sds.sqrt();
 }
 
+// The same marginal standard deviations through the Kronecker structure:
+// S2 = W1 M W2' with W = V o V and M_ij = (A1_i + A2_j)^-(nu + 1), so
+// O(N (n1 + n2)) instead of O(N^2); agrees with marginal_sd_eigen to rounding.
+// [[Rcpp::export]]
+Eigen::ArrayXd marginal_sd_kron(
+    const Eigen::VectorXd& A1, const Eigen::MatrixXd& V1, int dim_x,
+    const Eigen::VectorXd& A2, const Eigen::MatrixXd& V2, int dim_y,
+    int nu
+) {
+    MatrixXd M(dim_x, dim_y);
+    for (int i = 0; i < dim_x; ++i)
+        for (int j = 0; j < dim_y; ++j) M(i, j) = std::pow(A1(i) + A2(j), -(nu + 1.0));
+    const MatrixXd S2 = V1.array().square().matrix() * M * V2.array().square().matrix().transpose();
+    ArrayXd sd(dim_x * dim_y);
+    for (int a = 0; a < dim_x; ++a)
+        for (int b = 0; b < dim_y; ++b) sd(a * dim_y + b) = std::sqrt(S2(a, b));
+    return sd;
+}
+
 namespace {
 
 // The standardised precision Q~ = D Q^(nu + 1) D and the pieces it is built
 // from. This is the body of make_standardized_matern_eigen (2024) unchanged
 // in its statements and their order; matern_spectral reuses it so both
-// return the same Q~ bit for bit.
+// return the same Q~ bit for bit. kron_sd selects the O(N (n1 + n2))
+// marginal sds (2026-09-29); false keeps the 2024 arithmetic.
 struct StandardizedPieces {
     VectorXd A1, A2;
     MatrixXd V1, V2;
@@ -61,7 +81,8 @@ struct StandardizedPieces {
     SparseMatrix<double> Q_std;
 };
 
-StandardizedPieces standardized_pieces(int dim_x, int dim_y, double rho1, double rho2, int nu) {
+StandardizedPieces standardized_pieces(int dim_x, int dim_y, double rho1, double rho2, int nu,
+                                       bool kron_sd = false) {
     StandardizedPieces out;
     int N = dim_x * dim_y;
     SparseMatrix<double> Q1 = make_AR_prec_matrix_cpp(dim_x, rho1);
@@ -75,7 +96,8 @@ StandardizedPieces standardized_pieces(int dim_x, int dim_y, double rho1, double
     out.A2 = solver2.eigenvalues();
     out.V2 = solver2.eigenvectors();
 
-    out.sd = marginal_sd_eigen(out.A1, out.V1, dim_x, out.A2, out.V2, dim_y, nu);
+    out.sd = kron_sd ? marginal_sd_kron(out.A1, out.V1, dim_x, out.A2, out.V2, dim_y, nu)
+                     : marginal_sd_eigen(out.A1, out.V1, dim_x, out.A2, out.V2, dim_y, nu);
 
     DiagonalMatrix<double, Dynamic> D(N);
     D.diagonal() = out.sd;
@@ -103,17 +125,18 @@ StandardizedPieces standardized_pieces(int dim_x, int dim_y, double rho1, double
 
 // Standardised Matern precision Q~ (sparse), whose inverse is a correlation matrix.
 // [[Rcpp::export]]
-Eigen::SparseMatrix<double> make_standardized_matern_eigen_cpp(int dim_x, int dim_y, double rho1, double rho2, int nu) {
+Eigen::SparseMatrix<double> make_standardized_matern_eigen_cpp(int dim_x, int dim_y, double rho1, double rho2, int nu,
+                                                               bool kron_sd = false) {
     if (dim_x <= 0 || dim_y <= 0) return SparseMatrix<double>(0, 0);
-    return standardized_pieces(dim_x, dim_y, rho1, rho2, nu).Q_std;
+    return standardized_pieces(dim_x, dim_y, rho1, rho2, nu, kron_sd).Q_std;
 }
 
 // Q~ plus its half log-determinant, marginal sds and the two eigen systems
 // from one call (review F6). hld = 0.5 * ((nu + 1) sum_ij log(A1_i + A2_j) + 2 sum_k log sd_k).
 // [[Rcpp::export]]
-Rcpp::List matern_spectral_cpp(int dim_x, int dim_y, double rho1, double rho2, int nu) {
+Rcpp::List matern_spectral_cpp(int dim_x, int dim_y, double rho1, double rho2, int nu, bool kron_sd = false) {
     if (dim_x <= 0 || dim_y <= 0) return Rcpp::List::create();
-    StandardizedPieces sp = standardized_pieces(dim_x, dim_y, rho1, rho2, nu);
+    StandardizedPieces sp = standardized_pieces(dim_x, dim_y, rho1, rho2, nu, kron_sd);
     double log_lam = 0.0;
     for (int i = 0; i < dim_x; ++i)
         for (int j = 0; j < dim_y; ++j)
@@ -262,6 +285,48 @@ Eigen::MatrixXd rmatern_copula_eigen_cpp(int n, int dim_x, int dim_y, double rho
         }
     }
     if (n > 0) samples = samples.array().colwise() / marginal_sds;
+    return samples;
+}
+
+// The same draws through the Kronecker structure (2026-09-29): eigenpair (i, j)
+// keeps its own generator and its n normals in the same order as above, so a
+// seed gives the eigenpair sampler's fields up to summation order. Per draw
+// s, Z_s = V2 (lambda^(-(nu+1)/2) o E_s)' V1' as a dim_y x dim_x matrix, whose
+// column-major vectorisation is station order k = a * dim_y + b; then the
+// marginal sds (Kronecker form). O(N (n1 + n2)) per draw instead of O(N^2).
+// [[Rcpp::export]]
+Eigen::MatrixXd rmatern_copula_kron_cpp(int n, int dim_x, int dim_y, double rho1,
+                                        double rho2, int nu,
+                                        Rcpp::Nullable<int> seed = R_NilValue) {
+    if (n < 0 || dim_x <= 0 || dim_y <= 0) return MatrixXd(0, 0);
+    SparseMatrix<double> Q1 = make_AR_prec_matrix_cpp(dim_x, rho1);
+    SparseMatrix<double> Q2 = make_AR_prec_matrix_cpp(dim_y, rho2);
+    SelfAdjointEigenSolver<SparseMatrix<double>> solver1(Q1);
+    const VectorXd A1 = solver1.eigenvalues();
+    const MatrixXd V1 = solver1.eigenvectors();
+    SelfAdjointEigenSolver<SparseMatrix<double>> solver2(Q2);
+    const VectorXd A2 = solver2.eigenvalues();
+    const MatrixXd V2 = solver2.eigenvectors();
+    const ArrayXd sd = marginal_sd_kron(A1, V1, dim_x, A2, V2, dim_y, nu);
+
+    const int D = dim_x * dim_y;
+    MatrixXd E(dim_y, std::size_t(dim_x) * n);   // column i + dim_x * s holds E_s(., i)
+    const std::uint64_t rng_base = stdmatern::seed_base(seed);
+    for (int i = 0; i < dim_x; ++i) {
+        for (int j = 0; j < dim_y; ++j) {
+            std::mt19937 gen = stdmatern::pair_generator(rng_base, i, j, dim_y);
+            std::normal_distribution<double> d(0.0, 1.0);
+            const double lambda = std::pow(A1(i) + A2(j), -(nu + 1.0) / 2.0);
+            for (int s = 0; s < n; ++s) E(j, i + std::size_t(dim_x) * s) = lambda * d(gen);
+        }
+    }
+    MatrixXd samples(D, n);
+    MatrixXd T(dim_y, dim_x);
+    for (int s = 0; s < n; ++s) {
+        T.noalias() = V2 * E.middleCols(std::size_t(dim_x) * s, dim_x);
+        Map<MatrixXd>(samples.col(s).data(), dim_y, dim_x).noalias() = T * V1.transpose();
+    }
+    if (n > 0) samples = samples.array().colwise() / sd;
     return samples;
 }
 

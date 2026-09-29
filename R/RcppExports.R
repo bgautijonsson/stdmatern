@@ -9,12 +9,16 @@ marginal_sd_eigen <- function(A1, V1, dim_x, A2, V2, dim_y, nu) {
     .Call(`_stdmatern_marginal_sd_eigen`, A1, V1, dim_x, A2, V2, dim_y, nu)
 }
 
-make_standardized_matern_eigen_cpp <- function(dim_x, dim_y, rho1, rho2, nu) {
-    .Call(`_stdmatern_make_standardized_matern_eigen_cpp`, dim_x, dim_y, rho1, rho2, nu)
+marginal_sd_kron <- function(A1, V1, dim_x, A2, V2, dim_y, nu) {
+    .Call(`_stdmatern_marginal_sd_kron`, A1, V1, dim_x, A2, V2, dim_y, nu)
 }
 
-matern_spectral_cpp <- function(dim_x, dim_y, rho1, rho2, nu) {
-    .Call(`_stdmatern_matern_spectral_cpp`, dim_x, dim_y, rho1, rho2, nu)
+make_standardized_matern_eigen_cpp <- function(dim_x, dim_y, rho1, rho2, nu, kron_sd = FALSE) {
+    .Call(`_stdmatern_make_standardized_matern_eigen_cpp`, dim_x, dim_y, rho1, rho2, nu, kron_sd)
+}
+
+matern_spectral_cpp <- function(dim_x, dim_y, rho1, rho2, nu, kron_sd = FALSE) {
+    .Call(`_stdmatern_matern_spectral_cpp`, dim_x, dim_y, rho1, rho2, nu, kron_sd)
 }
 
 dmatern_copula_eigen_cpp <- function(X, dim_x, dim_y, rho1, rho2, nu) {
@@ -27,6 +31,10 @@ dmatern_copula_kron_cpp <- function(X, dim_x, dim_y, rho1, rho2, nu) {
 
 rmatern_copula_eigen_cpp <- function(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL) {
     .Call(`_stdmatern_rmatern_copula_eigen_cpp`, n, dim_x, dim_y, rho1, rho2, nu, seed)
+}
+
+rmatern_copula_kron_cpp <- function(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL) {
+    .Call(`_stdmatern_rmatern_copula_kron_cpp`, n, dim_x, dim_y, rho1, rho2, nu, seed)
 }
 
 fit_matern_copula_eigen_cpp <- function(Y, dim_x, dim_y, nu, start = NULL, kron = FALSE, maxeval = 1000L, xtol_rel = 1e-6, ftol_rel = 1e-8) {

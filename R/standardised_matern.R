@@ -108,6 +108,9 @@ parse_dim_rho <- function(dim, rho) {
 #' @param dim Grid size: a scalar (square) or `c(dim_x, dim_y)`, positive integers.
 #' @param rho Correlation parameter(s) in (-1, 1): a scalar (isotropic) or `c(rho1, rho2)`.
 #' @param nu Smoothness, a non-negative integer (the precision is raised to `nu + 1`).
+#' @param method How the marginal standard deviations are computed: `"eigenpair"`
+#'   (default; the 2024 arithmetic the production pins were taken on, O(N^2)) or
+#'   `"kronecker"` (\eqn{S^2 = W_1 M W_2'}, O(N (n_x + n_y))). Equal to rounding.
 #' @return A `dgCMatrix` of order `dim_x * dim_y`.
 #' @seealso [matern_spectral()] for the same matrix together with its half
 #'   log-determinant and eigen systems.
@@ -115,9 +118,10 @@ parse_dim_rho <- function(dim, rho) {
 #' Q <- make_standardized_matern(c(6, 5), rho = 0.7, nu = 1)
 #' range(diag(solve(Q))) # unit marginal variances
 #' @export
-make_standardized_matern <- function(dim, rho, nu) {
+make_standardized_matern <- function(dim, rho, nu, method = c("eigenpair", "kronecker")) {
+  method <- match.arg(method)
   p <- parse_dim_rho(dim, rho)
-  make_standardized_matern_eigen_cpp(p$dim_x, p$dim_y, p$rho1, p$rho2, check_nu(nu))
+  make_standardized_matern_eigen_cpp(p$dim_x, p$dim_y, p$rho1, p$rho2, check_nu(nu), method == "kronecker")
 }
 
 #' @rdname make_standardized_matern
@@ -143,10 +147,11 @@ make_standardized_matern_eigen <- function(dim_x, dim_y, rho1, rho2, nu) {
 #' sp <- matern_spectral(c(6, 5), 0.7, 1)
 #' sp$hld
 #' @export
-matern_spectral <- function(dim, rho, nu) {
+matern_spectral <- function(dim, rho, nu, method = c("eigenpair", "kronecker")) {
+  method <- match.arg(method)
   p <- parse_dim_rho(dim, rho)
   nu <- check_nu(nu)
-  cpp <- matern_spectral_cpp(p$dim_x, p$dim_y, p$rho1, p$rho2, nu)
+  cpp <- matern_spectral_cpp(p$dim_x, p$dim_y, p$rho1, p$rho2, nu, method == "kronecker")
   Q <- cpp$Q
   list(
     Q = Q, i = Q@i, p = Q@p, x = Q@x,
@@ -242,14 +247,20 @@ dmatern <- function(X, dim, rho, nu) {
 #' @param n Number of draws (a non-negative integer).
 #' @inheritParams make_standardized_matern
 #' @param seed A whole number, or `NULL` to draw the base seed from R's RNG.
+#' @param method `"eigenpair"` (default) adds one Kronecker eigenvector at a time,
+#'   O(N^2 n); `"kronecker"` forms each draw as
+#'   \eqn{V_2 (\Lambda^{-(\nu+1)/2} \circ E) V_1'}, O(N (n_x + n_y) n), from the
+#'   same per-eigenpair random numbers, so for a given seed the two agree to rounding.
 #' @return A `dim_x * dim_y` by `n` matrix, rows in x-major station order.
 #' @examples
 #' Z <- rmatern_copula(4, c(6, 5), 0.7, 1, seed = 42)
 #' identical(Z, rmatern_copula(4, c(6, 5), 0.7, 1, seed = 42))
 #' @export
-rmatern_copula <- function(n, dim, rho, nu, seed = NULL) {
+rmatern_copula <- function(n, dim, rho, nu, seed = NULL, method = c("eigenpair", "kronecker")) {
+  method <- match.arg(method)
   p <- parse_dim_rho(dim, rho)
-  rmatern_copula_eigen_cpp(check_n(n), p$dim_x, p$dim_y, p$rho1, p$rho2, check_nu(nu), check_seed(seed))
+  draw <- if (method == "kronecker") rmatern_copula_kron_cpp else rmatern_copula_eigen_cpp
+  draw(check_n(n), p$dim_x, p$dim_y, p$rho1, p$rho2, check_nu(nu), check_seed(seed))
 }
 
 #' @rdname rmatern_copula

@@ -5,7 +5,7 @@
 \alias{make_standardized_matern_eigen}
 \title{Standardised Matern precision matrix}
 \usage{
-make_standardized_matern(dim, rho, nu)
+make_standardized_matern(dim, rho, nu, method = c("eigenpair", "kronecker"))
 
 make_standardized_matern_eigen(dim_x, dim_y, rho1, rho2, nu)
 }
@@ -15,6 +15,10 @@ make_standardized_matern_eigen(dim_x, dim_y, rho1, rho2, nu)
 \item{rho}{Correlation parameter(s) in (-1, 1): a scalar (isotropic) or \code{c(rho1, rho2)}.}
 
 \item{nu}{Smoothness, a non-negative integer (the precision is raised to \code{nu + 1}).}
+
+\item{method}{How the marginal standard deviations are computed: \code{"eigenpair"}
+(default; the 2024 arithmetic the production pins were taken on, O(N^2)) or
+\code{"kronecker"} (\eqn{S^2 = W_1 M W_2'}, O(N (n_x + n_y))). Equal to rounding.}
 
 \item{dim_x, dim_y}{Grid dimensions (positive integers).}
 

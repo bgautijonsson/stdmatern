@@ -5,7 +5,14 @@
 \alias{rmatern_copula_eigen}
 \title{Sample the standardised Matern copula field}
 \usage{
-rmatern_copula(n, dim, rho, nu, seed = NULL)
+rmatern_copula(
+  n,
+  dim,
+  rho,
+  nu,
+  seed = NULL,
+  method = c("eigenpair", "kronecker")
+)
 
 rmatern_copula_eigen(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL)
 }
@@ -19,6 +26,11 @@ rmatern_copula_eigen(n, dim_x, dim_y, rho1, rho2, nu, seed = NULL)
 \item{nu}{Smoothness, a non-negative integer (the precision is raised to \code{nu + 1}).}
 
 \item{seed}{A whole number, or \code{NULL} to draw the base seed from R's RNG.}
+
+\item{method}{\code{"eigenpair"} (default) adds one Kronecker eigenvector at a time,
+O(N^2 n); \code{"kronecker"} forms each draw as
+\eqn{V_2 (\Lambda^{-(\nu+1)/2} \circ E) V_1'}, O(N (n_x + n_y) n), from the
+same per-eigenpair random numbers, so for a given seed the two agree to rounding.}
 
 \item{dim_x, dim_y}{Grid dimensions (positive integers).}
 
