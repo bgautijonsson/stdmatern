@@ -5,7 +5,7 @@
 \alias{dmatern_copula_eigen}
 \title{Gaussian copula log-density of the standardised Matern field}
 \usage{
-dmatern_copula(X, dim, rho, nu, method = c("eigenpair", "kronecker"))
+dmatern_copula(X, dim, rho, nu, method = c("kronecker", "eigenpair"))
 
 dmatern_copula_eigen(X, dim_x, dim_y, rho1, rho2, nu)
 }
@@ -19,11 +19,11 @@ dmatern_copula_eigen(X, dim_x, dim_y, rho1, rho2, nu)
 
 \item{nu}{Smoothness, a non-negative integer (the precision is raised to \code{nu + 1}).}
 
-\item{method}{\code{"eigenpair"} (default) evaluates one Kronecker eigenvector per
-eigenpair against every observation, O(N^2 n); \code{"kronecker"} evaluates the
-same quantity through \eqn{T = V_2' Z V_1}, O(N (n_x + n_y) n). The two
-agree to roughly 1e-10 per observation (summation order); the default is the
-form the production pins were taken on.}
+\item{method}{\code{"kronecker"} (default) evaluates the quadratic form through
+\eqn{T = V_2' Z V_1}, O(N (n_x + n_y) n); \code{"eigenpair"} evaluates one
+Kronecker eigenvector per eigenpair against every observation, O(N^2 n), the
+2024 reference form. The two agree to roughly 1e-10 per observation
+(summation order).}
 
 \item{dim_x, dim_y}{Grid dimensions (positive integers).}
 

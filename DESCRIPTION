@@ -1,8 +1,8 @@
 Package: stdmatern
 Type: Package
 Title: Standardised Matern Gaussian Fields and Copulas on Rectangular Grids
-Version: 0.3.0
-Date: 2026-09-02
+Version: 0.4.0
+Date: 2026-09-29
 Authors@R: person("Brynjolfur Gauti", "Gudrunar Jonsson", email = "brynjolfur@hi.is", role = c("aut", "cre"))
 Description: Sparse precision matrices, densities, samplers and a maximum-likelihood
     fit for the standardised anisotropic Matern-like Gaussian field and its Gaussian

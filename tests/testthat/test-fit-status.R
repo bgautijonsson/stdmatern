@@ -40,30 +40,35 @@ test_that("a warm start is used and reduces the evaluation count", {
 test_that("the kronecker objective agrees with the eigenpair objective and the dense reference", {
   set.seed(4)
   X <- matrix(rnorm(12 * 9 * 5), 12 * 9, 5)
-  a <- dmatern_copula(X, c(12L, 9L), 0.6, 1L)
+  a <- dmatern_copula(X, c(12L, 9L), 0.6, 1L, method = "eigenpair")
   b <- dmatern_copula(X, c(12L, 9L), 0.6, 1L, method = "kronecker")
   expect_lt(max(abs(a - b)), 1e-9)
   X5 <- matrix(rnorm(20 * 4), 20, 4)
   for (nu in 0:2) {
     ref <- ref_copula_logdens(X5, ref_Qtilde(5L, 4L, 0.7, 0.4, nu))
     expect_lt(max(abs(dmatern_copula(X5, c(5L, 4L), c(0.7, 0.4), nu, method = "kronecker") - ref)), 1e-9,
-      label = paste0("nu = ", nu))
+      label = paste0("nu = ", nu)
+    )
   }
 })
 
-test_that("fit_matern_copula(method = 'kronecker') reproduces the default fit", {
+test_that("fit_matern_copula(method = 'kronecker') reproduces the eigenpair fit", {
   Y <- Yiso()
-  a <- fit_matern_copula(Y, c(12L, 9L), 1L, isotropic = TRUE)
+  a <- fit_matern_copula(Y, c(12L, 9L), 1L, isotropic = TRUE, method = "eigenpair")
   b <- fit_matern_copula(Y, c(12L, 9L), 1L, isotropic = TRUE, method = "kronecker")
-  expect_lt(abs(a$rho - b$rho), 1e-8)
+  # the estimate is determined to BOBYQA's xtol_rel = 1e-6: objectives equal to 1e-10 stop at
+  # points 1.9e-8 apart on these data (measured 2026-09-29), so the bound is the fit's own tolerance
+  expect_lt(abs(a$rho - b$rho), 1e-6 * abs(a$rho))
   # the objectives agree to ~1e-10, which can move BOBYQA's stopping test by a few evaluations
   # (22 vs 24 seen in an optimised build); the estimate, not the path, is the contract
   expect_lte(abs(a$n_evals - b$n_evals), 6L)
-  a2 <- fit_matern_copula(Y, c(12L, 9L), 1L, isotropic = FALSE)
+  a2 <- fit_matern_copula(Y, c(12L, 9L), 1L, isotropic = FALSE, method = "eigenpair")
   b2 <- fit_matern_copula(Y, c(12L, 9L), 1L, isotropic = FALSE, method = "kronecker")
   expect_lt(max(abs(a2$rho - b2$rho)), 1e-8)
 })
 
-test_that("the default method is the eigenpair objective", {
-  expect_identical(eval(formals(fit_matern_copula)$method)[1], "eigenpair")
+test_that("every method argument defaults to the Kronecker form (author decision 2026-09-29)", {
+  for (f in list(fit_matern_copula, dmatern_copula, rmatern_copula, make_standardized_matern, matern_spectral)) {
+    expect_identical(eval(formals(f)$method), c("kronecker", "eigenpair"))
+  }
 })

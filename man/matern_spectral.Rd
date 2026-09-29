@@ -4,7 +4,7 @@
 \alias{matern_spectral}
 \title{Standardised precision with its spectral pieces}
 \usage{
-matern_spectral(dim, rho, nu, method = c("eigenpair", "kronecker"))
+matern_spectral(dim, rho, nu, method = c("kronecker", "eigenpair"))
 }
 \arguments{
 \item{dim}{Grid size: a scalar (square) or \code{c(dim_x, dim_y)}, positive integers.}
@@ -13,9 +13,10 @@ matern_spectral(dim, rho, nu, method = c("eigenpair", "kronecker"))
 
 \item{nu}{Smoothness, a non-negative integer (the precision is raised to \code{nu + 1}).}
 
-\item{method}{How the marginal standard deviations are computed: \code{"eigenpair"}
-(default; the 2024 arithmetic the production pins were taken on, O(N^2)) or
-\code{"kronecker"} (\eqn{S^2 = W_1 M W_2'}, O(N (n_x + n_y))). Equal to rounding.}
+\item{method}{How the marginal standard deviations are computed: \code{"kronecker"}
+(default; \eqn{S^2 = W_1 M W_2'}, O(N (n_x + n_y))) or \code{"eigenpair"} (the
+2024 arithmetic, one Kronecker eigenvector at a time, O(N^2)), kept as the
+reference form. Equal to rounding (1e-13 relative).}
 }
 \value{
 A list: \code{Q} (\code{dgCMatrix}), \code{i}, \code{p}, \code{x} (its CSC slots), \code{hld}, \code{sd},

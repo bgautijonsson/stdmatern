@@ -10,7 +10,7 @@ fit_matern_copula(
   nu,
   start = NULL,
   isotropic = FALSE,
-  method = c("eigenpair", "kronecker"),
+  method = c("kronecker", "eigenpair"),
   maxeval = 1000L,
   xtol_rel = 1e-06,
   ftol_rel = 1e-08

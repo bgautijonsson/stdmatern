@@ -108,9 +108,10 @@ parse_dim_rho <- function(dim, rho) {
 #' @param dim Grid size: a scalar (square) or `c(dim_x, dim_y)`, positive integers.
 #' @param rho Correlation parameter(s) in (-1, 1): a scalar (isotropic) or `c(rho1, rho2)`.
 #' @param nu Smoothness, a non-negative integer (the precision is raised to `nu + 1`).
-#' @param method How the marginal standard deviations are computed: `"eigenpair"`
-#'   (default; the 2024 arithmetic the production pins were taken on, O(N^2)) or
-#'   `"kronecker"` (\eqn{S^2 = W_1 M W_2'}, O(N (n_x + n_y))). Equal to rounding.
+#' @param method How the marginal standard deviations are computed: `"kronecker"`
+#'   (default; \eqn{S^2 = W_1 M W_2'}, O(N (n_x + n_y))) or `"eigenpair"` (the
+#'   2024 arithmetic, one Kronecker eigenvector at a time, O(N^2)), kept as the
+#'   reference form. Equal to rounding (1e-13 relative).
 #' @return A `dgCMatrix` of order `dim_x * dim_y`.
 #' @seealso [matern_spectral()] for the same matrix together with its half
 #'   log-determinant and eigen systems.
@@ -118,7 +119,7 @@ parse_dim_rho <- function(dim, rho) {
 #' Q <- make_standardized_matern(c(6, 5), rho = 0.7, nu = 1)
 #' range(diag(solve(Q))) # unit marginal variances
 #' @export
-make_standardized_matern <- function(dim, rho, nu, method = c("eigenpair", "kronecker")) {
+make_standardized_matern <- function(dim, rho, nu, method = c("kronecker", "eigenpair")) {
   method <- match.arg(method)
   p <- parse_dim_rho(dim, rho)
   make_standardized_matern_eigen_cpp(p$dim_x, p$dim_y, p$rho1, p$rho2, check_nu(nu), method == "kronecker")
@@ -147,7 +148,7 @@ make_standardized_matern_eigen <- function(dim_x, dim_y, rho1, rho2, nu) {
 #' sp <- matern_spectral(c(6, 5), 0.7, 1)
 #' sp$hld
 #' @export
-matern_spectral <- function(dim, rho, nu, method = c("eigenpair", "kronecker")) {
+matern_spectral <- function(dim, rho, nu, method = c("kronecker", "eigenpair")) {
   method <- match.arg(method)
   p <- parse_dim_rho(dim, rho)
   nu <- check_nu(nu)
@@ -189,17 +190,17 @@ make_AR_prec_matrix <- function(dim, rho) {
 #' @param X Numeric matrix of Gaussian scores, one observation per column and
 #'   `dim_x * dim_y` rows in x-major station order (a vector is one observation).
 #' @inheritParams make_standardized_matern
-#' @param method `"eigenpair"` (default) evaluates one Kronecker eigenvector per
-#'   eigenpair against every observation, O(N^2 n); `"kronecker"` evaluates the
-#'   same quantity through \eqn{T = V_2' Z V_1}, O(N (n_x + n_y) n). The two
-#'   agree to roughly 1e-10 per observation (summation order); the default is the
-#'   form the production pins were taken on.
+#' @param method `"kronecker"` (default) evaluates the quadratic form through
+#'   \eqn{T = V_2' Z V_1}, O(N (n_x + n_y) n); `"eigenpair"` evaluates one
+#'   Kronecker eigenvector per eigenpair against every observation, O(N^2 n), the
+#'   2024 reference form. The two agree to roughly 1e-10 per observation
+#'   (summation order).
 #' @return A numeric vector with one log-density per observation.
 #' @examples
 #' Z <- rmatern_copula(3, c(6, 5), 0.7, 1, seed = 1)
 #' dmatern_copula(Z, c(6, 5), 0.7, 1)
 #' @export
-dmatern_copula <- function(X, dim, rho, nu, method = c("eigenpair", "kronecker")) {
+dmatern_copula <- function(X, dim, rho, nu, method = c("kronecker", "eigenpair")) {
   method <- match.arg(method)
   p <- parse_dim_rho(dim, rho)
   nu <- check_nu(nu)
@@ -247,16 +248,17 @@ dmatern <- function(X, dim, rho, nu) {
 #' @param n Number of draws (a non-negative integer).
 #' @inheritParams make_standardized_matern
 #' @param seed A whole number, or `NULL` to draw the base seed from R's RNG.
-#' @param method `"eigenpair"` (default) adds one Kronecker eigenvector at a time,
-#'   O(N^2 n); `"kronecker"` forms each draw as
-#'   \eqn{V_2 (\Lambda^{-(\nu+1)/2} \circ E) V_1'}, O(N (n_x + n_y) n), from the
-#'   same per-eigenpair random numbers, so for a given seed the two agree to rounding.
+#' @param method `"kronecker"` (default) forms each draw as
+#'   \eqn{V_2 (\Lambda^{-(\nu+1)/2} \circ E) V_1'}, O(N (n_x + n_y) n);
+#'   `"eigenpair"` adds one Kronecker eigenvector at a time, O(N^2 n), the 2024
+#'   reference form. Both use the same per-eigenpair random numbers, so for a
+#'   given seed they agree to rounding.
 #' @return A `dim_x * dim_y` by `n` matrix, rows in x-major station order.
 #' @examples
 #' Z <- rmatern_copula(4, c(6, 5), 0.7, 1, seed = 42)
 #' identical(Z, rmatern_copula(4, c(6, 5), 0.7, 1, seed = 42))
 #' @export
-rmatern_copula <- function(n, dim, rho, nu, seed = NULL, method = c("eigenpair", "kronecker")) {
+rmatern_copula <- function(n, dim, rho, nu, seed = NULL, method = c("kronecker", "eigenpair")) {
   method <- match.arg(method)
   p <- parse_dim_rho(dim, rho)
   draw <- if (method == "kronecker") rmatern_copula_kron_cpp else rmatern_copula_eigen_cpp
@@ -309,7 +311,7 @@ rmatern <- function(n, dim, rho, nu, seed = NULL) {
 #' fit_matern_copula(Y, c(8, 8), 1, isotropic = TRUE)[c("rho", "n_evals", "stop_reason")]
 #' @export
 fit_matern_copula <- function(Y, dim, nu, start = NULL, isotropic = FALSE,
-                              method = c("eigenpair", "kronecker"),
+                              method = c("kronecker", "eigenpair"),
                               maxeval = 1000L, xtol_rel = 1e-6, ftol_rel = 1e-8) {
   method <- match.arg(method)
   d <- check_dim(dim)

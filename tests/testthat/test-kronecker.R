@@ -10,7 +10,7 @@ test_that("Kronecker marginal sds match the eigenpair sds and the dense inverse"
     d <- grids[[cases$g[r]]]
     rho <- if (cases$aniso[r]) c(0.83, 0.41) else 0.7
     nu <- cases$nu[r]
-    Qe <- make_standardized_matern(d, rho, nu)
+    Qe <- make_standardized_matern(d, rho, nu, method = "eigenpair")
     Qk <- make_standardized_matern(d, rho, nu, method = "kronecker")
     lab <- sprintf("dims %s nu %d rho %s", paste(d, collapse = "x"), nu, paste(rho, collapse = ","))
     expect_lt(max(abs(Qk - Qe)) / max(abs(Qe)), 1e-13, label = lab)
@@ -22,7 +22,7 @@ test_that("Kronecker marginal sds match the eigenpair sds and the dense inverse"
 
 test_that("matern_spectral agrees across methods, half log-determinant included", {
   for (nu in 0:2) {
-    se <- matern_spectral(c(12L, 9L), c(0.9, 0.6), nu)
+    se <- matern_spectral(c(12L, 9L), c(0.9, 0.6), nu, method = "eigenpair")
     sk <- matern_spectral(c(12L, 9L), c(0.9, 0.6), nu, method = "kronecker")
     expect_lt(abs(sk$hld - se$hld), 1e-10 * abs(se$hld))
     expect_lt(max(abs(sk$sd - se$sd)), 1e-14)
@@ -36,7 +36,7 @@ test_that("the Kronecker sampler reproduces the eigenpair sampler's draws from t
     d <- grids[[cases$g[r]]]
     rho <- if (cases$aniso[r]) c(0.83, 0.41) else 0.7
     nu <- cases$nu[r]
-    Ze <- rmatern_copula(7L, d, rho, nu, seed = 11L)
+    Ze <- rmatern_copula(7L, d, rho, nu, seed = 11L, method = "eigenpair")
     Zk <- rmatern_copula(7L, d, rho, nu, seed = 11L, method = "kronecker")
     expect_equal(dim(Zk), dim(Ze))
     expect_lt(max(abs(Zk - Ze)), 1e-12 * max(1, max(abs(Ze))),

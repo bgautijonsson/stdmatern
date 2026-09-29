@@ -42,11 +42,11 @@ Z <- rmatern_copula_eigen(n_obs, dim1, dim2, rho1, rho2, nu)
 stop <- tictoc::toc()
 tibble(
   Z = as.numeric(Z[, 1])
-) |> 
+) |>
   mutate(
     lat = rep(seq_len(dim1), each = dim2),
     lon = rep(seq_len(dim2), times = dim1),
-  ) |> 
+  ) |>
   ggplot(aes(lat, lon, fill = Z)) +
   geom_raster() +
   scale_fill_viridis_c() +
@@ -57,12 +57,17 @@ stop$callback_msg
 On the plots below, the distribution of sample statistics are shown in black while the theoretical distributions of standard normal variables is  shown in red.
 
 ```{r}
-Z  |> apply(1, mean) |> density() |> plot()
+Z |>
+  apply(1, mean) |>
+  density() |>
+  plot()
 curve(dnorm(x, 0, 1 / sqrt(n_obs)), add = TRUE, from = -0.5, to = 0.5, col = "red")
 ```
 
 ```{r}
-apply(Z, 1, var) |> density() |> plot()
+apply(Z, 1, var) |>
+  density() |>
+  plot()
 curve((n_obs - 1) * dchisq((n_obs - 1) * x, df = (n_obs - 1)), col = "red", from = 0, to = 5, add = TRUE)
 ```
 
@@ -83,6 +88,10 @@ tictoc::tic()
 dens <- dmatern_copula_eigen(Z, dim1, dim2, rho1, rho2, nu) |> sum()
 tictoc::toc()
 ```
+
+## Version 0.4.0 (2026-09-29)
+
+See README.md: every `method` argument defaults to `"kronecker"` (O(N (n_x + n_y)) instead of O(N^2), equal to rounding); `"eigenpair"` is the reference form.
 
 ## Version 0.3.0 (2026-09-02)
 

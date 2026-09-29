@@ -104,6 +104,20 @@ tictoc::toc()
 
     0.62 sec elapsed
 
+## Version 0.4.0 (2026-09-29)
+
+`make_standardized_matern()`, `matern_spectral()`, `dmatern_copula()`,
+`rmatern_copula()` and `fit_matern_copula()` default to `method = "kronecker"`.
+The standardised precision's eigenvectors are products of the two AR(1)
+eigenvectors, so the marginal standard deviations, the copula quadratic form
+and each draw are two small matrix products per field, O(N (n_x + n_y))
+instead of O(N^2). At a 133 x 211 grid with 99 fields the sampler takes 0.18 s
+instead of 24.1 s and one copula objective 0.13 s instead of 30.3 s. The
+results equal the eigenpair forms to rounding (1e-13 relative for the
+marginal standard deviations, 1e-10 per observation for the density, the same
+per-eigenpair random numbers for a given seed). `method = "eigenpair"` keeps
+the 2024 arithmetic as the reference form.
+
 ## Version 0.3.0 (2026-09-02)
 
 The circulant, folded and Cholesky variants, `plot_matern()` and the 2024
