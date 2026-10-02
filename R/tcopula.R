@@ -25,9 +25,21 @@ check_df_bounds <- function(df_bounds) {
 # log-determinant and the summed univariate t log densities of each column (ldt).
 tcopula_logdens_core <- function(X, Q, hld, df, ldt) {
   P <- nrow(X)
+  # each column scaled by its largest |x| so q cannot overflow for finite but huge t scores
+  # (df < 2 maps a Gaussian score beyond about 27 to |x| > 1e154); log(1 + q/df) is rebuilt as
+  # 2 log(s) + log(qs + df / s^2) - log(df) with qs = q / s^2
   q <- colSums(X * as.matrix(Q %*% X))
-  K <- lgamma((df + P) / 2) - lgamma(df / 2) - (P / 2) * log(df * pi)
-  K + hld - (df + P) / 2 * log1p(q / df) - ldt
+  log1p_q <- log1p(q / df)
+  s <- apply(abs(X), 2, max)
+  big <- which(is.finite(s) & s > 1e100)
+  if (length(big)) {
+    Xs <- sweep(X[, big, drop = FALSE], 2, s[big], "/")
+    qs <- colSums(Xs * as.matrix(Q %*% Xs))
+    log1p_q[big] <- 2 * log(s[big]) + log(qs + df / s[big]^2) - log(df)
+  }
+  # lgamma((df + P)/2) - lgamma(df/2) = lgamma(P/2) - lbeta(df/2, P/2): stable at large df
+  K <- lgamma(P / 2) - lbeta(df / 2, P / 2) - (P / 2) * log(df * pi)
+  K + hld - (df + P) / 2 * log1p_q - ldt
 }
 
 # Messages and stop reasons as the C++ fits report them (src/matern_copula_eigen.cpp, run_bobyqa).
@@ -132,7 +144,9 @@ dtmatern_copula <- function(X, dim, rho, nu, df, method = c("kronecker", "eigenp
 #' and \eqn{W} is drawn by `rgamma()` after `set.seed(seed)` under
 #' `RNGkind("Mersenne-Twister", "Inversion", "Rejection")`; the caller's
 #' `.Random.seed` (or its absence) and `RNGkind()` are restored on exit, so a
-#' seeded draw is reproducible and leaves the session stream untouched. With
+#' seeded draw is reproducible and leaves the session stream untouched (one
+#' exception: under `normal.kind = "Box-Muller"` R caches a second normal
+#' outside `.Random.seed`, which `set.seed()` discards). With
 #' `seed = NULL` both the base seed of \eqn{z} and then \eqn{W} come from the
 #' session stream, so `set.seed()` governs the draw.
 #'
@@ -172,6 +186,9 @@ rtmatern_copula <- function(n, dim, rho, nu, df, seed = NULL, method = c("kronec
     set.seed(seed, kind = "Mersenne-Twister", normal.kind = "Inversion", sample.kind = "Rejection")
   }
   W <- stats::rgamma(n, shape = df / 2, rate = df / 2)
+  if (any(W <= 0)) {
+    stop(sprintf("df = %g is too small: a Gamma(df/2) mixing draw underflowed to 0", df), call. = FALSE)
+  }
   X <- Z / rep(sqrt(W), each = nrow(Z))
   attr(X, "W") <- W
   X
@@ -206,7 +223,8 @@ rtmatern_copula <- function(n, dim, rho, nu, df, seed = NULL, method = c("kronec
 #'   given), `df`, `loglik`, `convergence` (the raw nlopt code), `message`,
 #'   `n_evals` (integer), `converged` (`TRUE` for nlopt codes 1--4),
 #'   `stop_reason` (`"converged"`, `"maxeval"`, `"maxtime"`, `"roundoff"` or
-#'   `"failed"`), `method`, `df_fixed` (`TRUE` when `df` was given) and
+#'   `"failed"`; also `"failed"`, with `converged = FALSE` and `loglik = NA`, when
+#'   every evaluation was non-finite), `method`, `df_fixed` (`TRUE` when `df` was given) and
 #'   `df_at_bound` (`TRUE` when the estimate lies within 1e-6 relative of a
 #'   bound of `df_bounds`; always `FALSE` for a fixed `df`).
 #' @examples
@@ -285,6 +303,9 @@ fit_tmatern_copula <- function(Y, dim, nu, df = NULL, start = NULL, df_start = 1
   )
   x <- res$solution
   code <- as.integer(res$status)
+  # every evaluation hit the non-finite sentinel: no likelihood was ever computed, whatever
+  # nlopt's status says
+  if (!is.finite(res$objective) || res$objective >= 1e15) code <- -1L
   df_hat <- if (df_fixed) df else exp(x[k + 1L])
   df_at_bound <- !df_fixed &&
     (abs(df_hat - df_bounds[1]) <= 1e-6 * df_bounds[1] || abs(df_hat - df_bounds[2]) <= 1e-6 * df_bounds[2])

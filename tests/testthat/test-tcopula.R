@@ -201,3 +201,21 @@ test_that("bad df, df_bounds and df_start are refused at the R boundary", {
   expect_error(fit_tmatern_copula(X, c(5L, 4L), 1L, df_start = 0), "df_start must be")
   expect_error(fit_tmatern_copula(X, c(5L, 4L), 1L, start = 1.2), "start must lie")
 })
+
+test_that("review fixes: stable constant at huge df, no overflow of q, failed fits say so, W underflow refused", {
+  Y <- rmatern_copula(3, c(12, 10), 0.7, 1, seed = 2)
+  for (dfv in c(1e8, 1e12, 1e16)) {
+    expect_lt(
+      max(abs(dtmatern_copula(gaussian_to_t(Y, dfv), c(12, 10), 0.7, 1, dfv) -
+        dmatern_copula(Y, c(12, 10), 0.7, 1))),
+      1e-5
+    )
+  }
+  X1 <- gaussian_to_t(c(-30, rep(0.1, 29)), 1)
+  expect_true(is.finite(X1[1]))
+  expect_true(is.finite(dtmatern_copula(X1, c(6, 5), 0.5, 1, df = 1)))
+  Yb <- rmatern_copula(10, c(6, 5), 0.5, 1, seed = 4)
+  Yb[1, 1] <- NA
+  expect_error(fit_tmatern_copula(Yb, c(6, 5), 1, df = 5, isotropic = TRUE), "finite")
+  expect_error(rtmatern_copula(500, c(6, 5), 0.7, 1, df = 0.01, seed = 1), "too small")
+})
