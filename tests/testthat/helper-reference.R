@@ -37,3 +37,21 @@ ref_normal_logdens <- function(X, Q) {
   N <- nrow(Q)
   -0.5 * (N * log(2 * pi) - as.numeric(determinant(Q, logarithm = TRUE)$modulus) + colSums(X * (Q %*% X)))
 }
+
+# Dense reference for the Student-t copula (0.6.0): correlation R = solve(Qt), multivariate t density
+# with df degrees of freedom at t scores X (one observation per column) minus the univariate t log
+# densities, each written out from the gamma-function formula (no dt(), no sparse algebra).
+ref_t_copula_logdens <- function(X, Qt, df) {
+  R <- solve(Qt)
+  P <- nrow(R)
+  q <- colSums(X * solve(R, X))
+  logdet_R <- as.numeric(determinant(R, logarithm = TRUE)$modulus)
+  joint <- lgamma((df + P) / 2) - lgamma(df / 2) - (P / 2) * log(df * pi) - 0.5 * logdet_R -
+    (df + P) / 2 * log(1 + q / df)
+  margin <- lgamma((df + 1) / 2) - lgamma(df / 2) - 0.5 * log(df * pi) - (df + 1) / 2 * log(1 + X^2 / df)
+  joint - colSums(margin)
+}
+# Inverse of gaussian_to_t written independently: Gaussian scores from t scores through the nearer tail.
+ref_t_to_gaussian <- function(X, df) {
+  -sign(X) * qnorm(pt(-abs(X), df, log.p = TRUE), log.p = TRUE)
+}

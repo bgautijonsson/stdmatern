@@ -1,12 +1,12 @@
 Package: stdmatern
 Type: Package
 Title: Standardised Matern Gaussian Fields and Copulas on Rectangular Grids
-Version: 0.5.0
-Date: 2026-09-29
+Version: 0.6.0
+Date: 2026-10-02
 Authors@R: person("Brynjolfur Gauti", "Gudrunar Jonsson", email = "brynjolfur@hi.is", role = c("aut", "cre"))
 Description: Sparse precision matrices, densities, samplers and a maximum-likelihood
     fit for the standardised anisotropic Matern-like Gaussian field and its Gaussian
-    copula on rectangular grids, built from the eigen systems of two AR(1)
+    and Student-t copulas on rectangular grids, built from the eigen systems of two AR(1)
     precision matrices (RcppEigen). All numerical work is single-threaded and
     reproducible from a seed; the fit runs nlopt's BOBYQA through the 'nloptr'
     package. Developed for the copula-extended Max-and-Smooth inference stack.
