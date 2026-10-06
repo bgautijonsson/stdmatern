@@ -104,6 +104,10 @@ tictoc::toc()
 
     0.62 sec elapsed
 
+## Version 0.6.0 (2026-10-02)
+
+A Student-t copula on the same standardised Matérn correlation: `dtmatern_copula()` (density), `rtmatern_copula()` (sampler), `fit_tmatern_copula()` (the (ρ, df) fit) and `gaussian_to_t()`. All are R-level, built on `matern_spectral()` and `rmatern_copula()`, with no new compiled code (`5f097f0`).
+
 ## Version 0.5.0 (2026-09-29)
 
 The samplers seed each eigenpair's generator from the full 64-bit hash of
