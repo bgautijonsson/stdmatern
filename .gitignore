@@ -1,0 +1,10 @@
+# Until 2026-11-06 the package lived in Paper 1, whose root .gitignore covered these
+*.Rcheck/
+*.tar.gz
+*.o
+*.so
+*.dll
+.Rhistory
+.RData
+.Rproj.user/
+.DS_Store
