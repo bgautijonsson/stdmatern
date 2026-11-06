@@ -10,3 +10,5 @@ Not compiled, not installed (`.Rbuildignore` excludes `archive/`). Kept for the 
 | `bench/`, `benchmark_all.csv` | The 2024 benchmark of the retired variants. The production-path benchmark is `tools/bench_production_paths.R`. |
 
 Evidence: `notes/stdmatern-review-2026-09-02.html`.
+
+The review note and `tools/bench_production_paths.R` named above were removed from this repository's public history on 2026-11-06 (the author's ruling); they are kept privately with the package's development records.
